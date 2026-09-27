@@ -49,5 +49,11 @@
     "bypass_required_checks": false,
     "semantic_conflict_resolution": "block",
     "dependency_intent_changes": "block"
+  },
+  "shared_repairs": {
+    "control_branch": "field/control",
+    "ledger_path": ".field/shared-repairs.json",
+    "reconcile_schedule_minute": 13,
+    "state_path": "state/shared-repairs.json"
   }
 }
