@@ -94,7 +94,6 @@ const repairPathCache = new Map();
 const result = {
   repository,
   ledger_branch: project.shared_repairs.control_branch,
-  checked_at: new Date().toISOString(),
   checked: pulls.length,
   satisfied: [],
   updated: [],
@@ -203,5 +202,20 @@ for (const pull of pulls) {
 
 await fs.mkdir(new URL('../state/', import.meta.url), { recursive: true });
 const statePath = new URL('../state/shared-repairs.json', import.meta.url);
-await fs.writeFile(statePath, JSON.stringify(result, null, 2) + '\n', 'utf8');
-console.log('LOEW_SHARED_REPAIR_RESULT=' + JSON.stringify(result));
+let previous = null;
+try {
+  previous = JSON.parse(await fs.readFile(statePath, 'utf8'));
+} catch (error) {
+  if (error.code !== 'ENOENT') throw error;
+}
+const previousComparable = previous ? { ...previous } : null;
+if (previousComparable) delete previousComparable.updated_at;
+const stateChanged = JSON.stringify(previousComparable) !== JSON.stringify(result);
+if (stateChanged) {
+  await fs.writeFile(
+    statePath,
+    JSON.stringify({ ...result, updated_at: new Date().toISOString() }, null, 2) + '\n',
+    'utf8'
+  );
+}
+console.log('LOEW_SHARED_REPAIR_RESULT=' + JSON.stringify({ ...result, state_changed: stateChanged }));
