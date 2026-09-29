@@ -35,3 +35,15 @@ test('pagination includes second page and does not claim partial lists are compl
   let calls=0;const result=await pages(async()=>++calls===1?Array(100).fill({}):[{id:'last'}],'/x?state=open');
   assert.equal(result.length,101);assert.equal(calls,2);
 });
+
+import { assignmentUpdate } from '../src/control-write.mjs';
+test('assignment edits enforce owner, dependency graph, freeze and truthful completion',()=>{
+  const records={projects:[{id:'p'}],agents:[{id:'owner',project:'p'}],assignments:[{id:'b',project:'p',depends_on:['a']}]};
+  const a={id:'a',project:'p',status:'ready'};
+  assert.throws(()=>assignmentUpdate(a,{owner_agent:'ghost'},records));
+  assert.throws(()=>assignmentUpdate(a,{depends_on:['b']},records),/cycle/);
+  assert.throws(()=>assignmentUpdate(a,{status:'complete'},records),/promotion/);
+  assert.throws(()=>assignmentUpdate(a,{qa:{classification:'PASS'}},records),/Unsupported/);
+  assert.equal(assignmentUpdate(a,{owner_agent:'owner',status:'active'},records).status,'ACTIVE');
+  records.projects[0].frozen=true;assert.throws(()=>assignmentUpdate({id:'new',project:'p',status:'ARCHIVED'},{status:'ACTIVE'},records),/frozen/);
+});

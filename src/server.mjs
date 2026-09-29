@@ -44,7 +44,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${PORT}`);
 
     if (url.pathname.startsWith("/api/control")) {
-      const result = await controlApi(new Request(url, { method: req.method }), process.env.RUNNER_GITHUB_TOKEN);
+      const result = await controlApi(new Request(url, { method: req.method, headers: req.headers, ...(["POST","PUT","PATCH"].includes(req.method) ? { body: JSON.stringify(await readBody(req)) } : {}) }), process.env.RUNNER_GITHUB_TOKEN);
       res.writeHead(result.status, Object.fromEntries(result.headers));
       return res.end(await result.text());
     }

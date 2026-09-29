@@ -1,9 +1,18 @@
+import { mutate } from "./control-write.mjs";
 import { controlView, transport, readRecords, inventory, registry, validId } from './control-github.mjs';
 import { deriveProject, handoff } from './control-plane.mjs';
 const response=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
 export async function controlApi(request, token) {
   const url=new URL(request.url), gh=transport(token);
-  if(request.method!=='GET')return response({error:'Read-only control plane; mutation tranche not enabled.'},405);
+  if (request.method==='POST' && url.pathname==='/api/control/actions') {
+    if(!token)return response({error:'GitHub write token required'},503);
+    if(request.headers.get('Origin')!==url.origin)return response({error:'Same-origin dashboard request required'},403);
+    if(!request.headers.get('Content-Type')?.startsWith('application/json'))return response({error:'JSON request required'},415);
+    const text=await request.text();if(text.length>100000)return response({error:'Request too large'},413);
+    let body;try {body=JSON.parse(text);}catch{return response({error:'Invalid JSON'},400);}
+    try {return response(await mutate(gh,body,request.headers.get('Cf-Access-Authenticated-User-Email') || 'dashboard user'));}catch(e){return response({error:e.message},e.status || 500);}
+  }
+  if(request.method!=='GET')return response({error:'Unsupported request'},405);
   if(url.pathname==='/api/control') {
     const data=await controlView(gh,{includeInventory:false});
     const snapshots=await readRecords(gh,'control-data/snapshots','control');
