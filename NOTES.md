@@ -19,3 +19,7 @@ Guarded assignment edits, existing-agent registration, project freeze, saved rep
 ## 3.0-C implementation checkpoint
 
 Dashboard consolidation persists a structured digest, reconciliation inventories configured source paths and exact blob duplicates, and guarded archive writes an archive-reference index without removing originals. Prose-only conflicts stay Needs review. Handoff clipboard failure now exposes selectable text instead of losing the packet. No model call involved.
+
+## 3.0-D UI integration checkpoint
+
+Infrastructure now displays expiring authoritative provider measurements and deferred work when supplied, otherwise unknown. No provider-limit/scheduling implementation changed. Published a narrow consumer-record contract in architecture for the infrastructure owner; actual feed availability remains unverified. Existing automation controls remain below the capacity surface.

@@ -1,4 +1,4 @@
-import { showControl, refreshControl } from "./control.js";
+import { showControl, refreshControl, showInfrastructure } from "./control.js";
 const workersEl = document.querySelector("#workers");
 const workerNavEl = document.querySelector("#worker-nav");
 const summaryEl = document.querySelector("#summary");
@@ -408,11 +408,12 @@ function setSection(section) {
   document.body.dataset.section = section;
   workersSection.hidden = section !== "infrastructure";
   visualSection.hidden = section !== "visual";
+  document.querySelector("#capacity-section").hidden = section !== "infrastructure";
   document.querySelector("#control-section").hidden = ["infrastructure","visual"].includes(section);
   primaryNav.forEach(item => { item.classList.toggle("active", item.dataset.section === section); item.setAttribute("aria-current", item.dataset.section === section ? "page" : "false"); });
   toolbarContext.textContent = section === "visual" ? "INSPECTOR EVIDENCE" : section === "infrastructure" ? "AUTOMATIONS" : "PROJECT CONTROL";
   if (section === "visual") loadVisual();
-  else if (section === "infrastructure") load();
+  else if (section === "infrastructure") { load(); showInfrastructure(); }
   else showControl(section);
 }
 
@@ -652,7 +653,7 @@ async function load() {
   }
 }
 
-refreshButton.addEventListener("click", () => currentSection === "visual" ? loadVisual() : currentSection === "infrastructure" ? load() : refreshControl());
+refreshButton.addEventListener("click", () => currentSection === "visual" ? loadVisual() : currentSection === "infrastructure" ? Promise.all([load(),showInfrastructure()]) : refreshControl());
 [visualProjectFilter, visualEnvironmentFilter, visualPrFilter].forEach(control => {
   control?.addEventListener("change", () => {
     selectedRunId = null;

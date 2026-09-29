@@ -237,3 +237,11 @@ Routine ticks should be deterministic and cheap. AI inference should occur only 
 Each target repository should keep a thin root `AGENTS.md` bootstrap that points back to the current Runner Bible and contains only a minimal emergency invariant set plus repository-specific product/process overlays.
 
 Platform is not an organizational split. Composio is available universally for remote control-plane operations. Authorized local clones may be used for implementation/testing where available, including Linux/Codex workflows, and may be combined with Composio remote operations.
+
+## 3.0 control-plane adapters (branch implementation)
+
+`control-plane.mjs` owns pure overlap, attention and cleanup proofs. `control-github.mjs` owns Git-backed registry/inventory reads. `control-api.mjs` exposes the same contract to the local and hosted adapters. `control-write.mjs` records guarded actions atomically with events under `control-data/` on `control`. Existing scheduler state/settings remain on their existing paths; this migration does not overwrite them.
+
+`dashboard/control.js` owns Projects/Team/Assignments/Notes/activity. Existing Visual and automation code stays in `app.js`. Core functions call no inference endpoint.
+
+Infrastructure UI is a consumer only. The infrastructure owner may publish provider records to `control-data/infrastructure/<provider-id>.json` on `control` with `id`, `status`, `observed_at`, `expires_at`, `usage_label`, `retry_after`/`reset_at`, `source`, and optional `deferred[]` entries. Records missing timestamps or past expiry render unknown; no plan allowance is treated as measured availability. Provider IDs: `github-actions`, `cloudflare-builds`, `browser-run`, `composio`, `inspector`, `runner-scheduler`. This adapter is proposed integration, not evidence that the owner has supplied records. Scheduling, limits and retry policy remain outside the 3.0 UI lane.

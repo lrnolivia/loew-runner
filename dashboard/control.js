@@ -106,3 +106,15 @@ function confirmAction(title,explanation,body) {drawer(title,`<p>${esc(explanati
 
 function packet(title,text) {const area=document.createElement('section');area.className='control-packet-panel';area.innerHTML=`<h3>${esc(title)}</h3><textarea class="control-packet" readonly aria-label="Generated packet">${esc(text)}</textarea>`;root.append(area);area.querySelector('textarea').focus();area.querySelector('textarea').select();}
 async function copyPacket(text,button) {try {await navigator.clipboard.writeText(text);if(button)button.textContent='copied';}catch{packet('copy this packet',text);}}
+
+export async function showInfrastructure() {
+  const surface=document.querySelector('#capacity-section');surface.innerHTML=empty('Loading infrastructure records…');
+  try {
+    const records=await api('/api/control/infrastructure');
+    const providers=['github-actions','cloudflare-builds','browser-run','composio','inspector','runner-scheduler'];
+    surface.innerHTML=`<h2>infrastructure</h2><p>Capacity and retry policy belong to the infrastructure owner. Missing or expired measurements stay unknown.</p>${table(['provider','state','usage / concurrency','retry / reset','evidence'],providers.map(id=>{
+      const p=records.find(v=>v.id===id), fresh=p?.observed_at && p?.expires_at && Date.parse(p.expires_at)>Date.now();
+      return [esc(id),badge(fresh?p.status:'unknown'),fresh?esc(p.usage_label || 'not measured'):'not measured',fresh?esc(p.retry_after || p.reset_at || 'not recorded'):'not recorded',p?`${esc(p.source || 'source missing')}<small>${esc(p.observed_at)}${fresh?'':' · measurement stale/unverified'}</small>`:'no authoritative record'];
+    }))}<h3>deferred execution</h3>${table(['work','classification','retry after','source'],records.flatMap(v=>(v.deferred || []).map(q=>[esc(q.assignment || q.id),badge(q.classification || 'unclassified'),esc(q.retry_after || 'not recorded'),esc(q.source || v.id)])))}<h3>automations</h3><p>Scheduled jobs below remain available. They are separate from registered project Team members.</p>`;
+  } catch(e) {surface.innerHTML=empty(`Infrastructure records unavailable: ${e.message}`);}
+}
