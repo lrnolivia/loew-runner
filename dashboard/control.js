@@ -1,5 +1,6 @@
 const root=document.querySelector('#control-section');
 let data=null, section='home', selected=null, tab='overview', busy=false;
+let dialog=null;
 const esc=v=>String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const empty=text=>`<p class="control-empty">${esc(text)}</p>`;
 const badge=v=>`<span class="control-status" data-state="${esc(v)}">${esc(v)}</span>`;
@@ -10,21 +11,21 @@ function projects() {return table(['project','stage / milestone','status','team'
 ]));}
 function attention(items) {return table(['severity','what needs attention','next step'],items.map(a=>[badge(a.severity),`${esc(a.reason)}<small>${esc(a.source)}</small>`,esc(a.action)]));}
 function work(items) {return table(['assignment','owner / domain','state','branch / PR','QA','next action'],items.map(a=>[
-  `<details><summary>${esc(a.id)}</summary><p>${esc(a.goal)}</p><ul>${(a.acceptance_criteria || []).map(v=>`<li>${esc(v)}</li>`).join('')}</ul><button data-handoff="${esc(a.id)}" data-project-id="${esc(a.project)}">copy Codex handoff</button></details>`,`${esc(a.owner_agent || 'unassigned')}<small>${esc(a.domain || a.tranche || 'not declared')}</small>`,badge(a.status),`${esc(a.branch || 'not linked')}<small>${a.pr?'PR #'+esc(a.pr):'no PR linked'}</small>`,badge(a.qa),esc(a.next_action || 'not recorded')
+  `<details><summary>${esc(a.id)}</summary><button data-edit-assignment="${esc(a.id)}">manage assignment</button><p>${esc(a.goal)}</p><ul>${(a.acceptance_criteria || []).map(v=>`<li>${esc(v)}</li>`).join('')}</ul><button data-handoff="${esc(a.id)}" data-project-id="${esc(a.project)}">copy Codex handoff</button></details>`,`${esc(a.owner_agent || 'unassigned')}<small>${esc(a.domain || a.tranche || 'not declared')}</small>`,badge(a.status),`${esc(a.branch || 'not linked')}<small>${a.pr?'PR #'+esc(a.pr):'no PR linked'}</small>`,badge(a.qa),esc(a.next_action || 'not recorded')
 ]));}
 function team(items) {return table(['agent','role / runtime','mission / domain','current assignment','reporting / wake'],items.map(a=>[esc(a.name || a.id),`${esc(a.role)}<small>${esc(a.runtime || 'external chat')}</small>`,`${esc(a.mission)}<small>${esc(a.domain)}</small>`,esc(a.current_assignment || 'unassigned'),`${esc(a.reports_to || 'not recorded')}<small>${a.can_wake?'supported automation':'manual handoff; cannot wake chat'}</small>`]));}
 function projectView(p) {
   const tabs=['overview','work','team','map','repo','qa','notes','history'];
   let content='';
   if(tab==='overview')content=`<h3>needs attention</h3>${attention(p.attention)}<h3>active work</h3>${work(p.assignments)}`;
-  if(tab==='work')content=work(p.assignments);
-  if(tab==='team')content=team(p.agents);
+  if(tab==='work')content=`<button data-create-assignment="${esc(p.id)}">new assignment</button>`+work(p.assignments);
+  if(tab==='team')content=`<button data-register-agent="${esc(p.id)}">register existing agent</button>`+team(p.agents);
   if(tab==='map')content=table(['relationship','evidence','exact paths'],p.overlap.map(e=>[`${esc(e.a)} ↔ ${esc(e.b)}`,`${badge(e.severity)}<small>${esc(e.evidence)}</small>`,e.paths.map(v=>`<code>${esc(v)}</code>`).join('<br>')]))+empty('Declared ownership and changed-file evidence are compared deterministically. Missing ownership is not proof of no conflict.');
-  if(tab==='repo')content=`<h3>pull requests</h3>${table(['PR','branch','head SHA','updated'],p.inventory.prs.map(v=>[`<a href="${esc(v.url)}" target="_blank" rel="noopener">#${esc(v.number)} ${esc(v.title)}</a>`,esc(v.head),`<code>${esc(v.sha)}</code>`,esc(v.updated_at)]))}<h3>branch cleanup ledger</h3>${table(['branch','assignment','ahead / behind','disposition / proof'],p.inventory.branches.map(b=>[esc(b.name),esc(b.assignment || 'unlinked'),`${esc(b.ahead)} / ${esc(b.behind)}`,b.cleanup.safe?'DELETE AFTER VERIFICATION':`KEEP / REVIEW<small>${esc(b.cleanup.reasons.join('; '))}</small>`]))}`;
+  if(tab==='repo')content=`<h3>pull requests</h3>${table(['PR','branch','head SHA','updated'],p.inventory.prs.map(v=>[`<a href="${esc(v.url)}" target="_blank" rel="noopener">#${esc(v.number)} ${esc(v.title)}</a>`,esc(v.head),`<code>${esc(v.sha)}</code>`,esc(v.updated_at)]))}<h3>branch cleanup ledger</h3>${table(['branch','assignment','ahead / behind','disposition / proof'],p.inventory.branches.map(b=>[esc(b.name),esc(b.assignment || 'unlinked'),`${esc(b.ahead)} / ${esc(b.behind)}`,b.cleanup.safe?`<button data-cleanup="${esc(b.name)}" data-project-id="${esc(p.id)}">review safe deletion</button>`:`KEEP / REVIEW<small>${esc(b.cleanup.reasons.join('; '))}</small>`]))}`;
   if(tab==='qa')content=table(['assignment','exact SHA','classification'],p.assignments.map(a=>[esc(a.id),`<code>${esc(a.head_sha || 'unverified')}</code>`,badge(a.qa)]))+empty('NOT_RUN and stale evidence do not count as passes. Provider capacity is handled by infrastructure ownership.');
   if(tab==='notes')content=`<h3>canonical sources</h3>${table(['source','purpose'],[['docs/STATE.md','current verified state'],['assignment JSON','structured work'],['reports/','provenance; needs review before consolidation']].map(r=>r.map(esc)))}<p>Structured consolidation and guarded tracker reconciliation arrive in tranche 3.0-C.</p>`;
   if(tab==='history')content=empty('Audit history is not available yet. No dashboard mutations are enabled in 3.0-A.');
-  return `<div class="control-heading"><div><button class="control-link" data-back>all projects</button><h2>${esc(p.name || p.id)}</h2><p>${esc(p.repository)} · ${esc(p.stage || 'stage not recorded')} · ${badge(p.health)}</p></div><div class="control-actions"><button data-refresh-project="${esc(p.id)}" ${busy?'disabled':''}>${busy?'refreshing…':'refresh repository truth'}</button><button data-handoff="" data-project-id="${esc(p.id)}">copy project handoff</button></div></div><p class="control-notice">${p.inventory.complete?`Repository evidence: ${esc(p.inventory.refreshed_at)}${p.inventory.stale?' · saved snapshot; refresh before acting':''}`:`Repository truth unverified: ${esc(p.inventory.error)}. Refresh is read-only.`}</p><nav class="control-tabs" aria-label="Project workspace">${tabs.map(v=>`<button data-project-tab="${v}" aria-current="${tab===v?'page':'false'}">${v}</button>`).join('')}</nav>${content}`;
+  return `<div class="control-heading"><div><button class="control-link" data-back>all projects</button><h2>${esc(p.name || p.id)}</h2><p>${esc(p.repository)} · ${esc(p.stage || 'stage not recorded')} · ${badge(p.health)}</p></div><div class="control-actions"><button data-freeze="${esc(p.id)}">${p.frozen?'unfreeze new work':'freeze new work'}</button><button data-refresh-project="${esc(p.id)}" ${busy?'disabled':''}>${busy?'refreshing…':'refresh repository truth'}</button><button data-handoff="" data-project-id="${esc(p.id)}">copy project handoff</button></div></div><p class="control-notice">${p.inventory.complete?`Repository evidence: ${esc(p.inventory.refreshed_at)}${p.inventory.stale?' · saved snapshot; refresh before acting':''}`:`Repository truth unverified: ${esc(p.inventory.error)}. Refresh is read-only.`}</p><nav class="control-tabs" aria-label="Project workspace">${tabs.map(v=>`<button data-project-tab="${v}" aria-current="${tab===v?'page':'false'}">${v}</button>`).join('')}</nav>${content}`;
 }
 function render() {
   if(!data)return;
@@ -32,13 +33,13 @@ function render() {
   if(p && section==='projects')root.innerHTML=projectView(p);
   else if(section==='home')root.innerHTML=`<div class="control-heading"><div><h2>what needs you?</h2><p>Live project records. Repository snapshots are refreshed explicitly.</p></div><span>${data.projects.length} projects · zero inference</span></div>${projects()}<h3>needs attention</h3>${attention(data.attention)}`;
   else if(section==='projects')root.innerHTML='<h2>projects</h2>'+projects();
-  else if(section==='assignments')root.innerHTML='<h2>assignments</h2>'+work(data.assignments);
-  else if(section==='team')root.innerHTML='<h2>team</h2>'+team(data.agents)+empty('First-class agents are registered explicitly. Scheduler jobs live under Infrastructure.');
-  else root.innerHTML='<h2>activity</h2>'+empty('No control actions recorded yet.');
+  else if(section==='assignments')root.innerHTML='<h2>assignments</h2>'+data.projects.map(p=>`<button data-create-assignment="${esc(p.id)}">new ${esc(p.name || p.id)} assignment</button>`).join(' ')+work(data.assignments);
+  else if(section==='team')root.innerHTML='<h2>team</h2>'+data.projects.map(p=>`<button data-register-agent="${esc(p.id)}">register ${esc(p.name || p.id)} agent</button>`).join(' ')+team(data.agents)+empty('First-class agents are registered explicitly. Scheduler jobs live under Infrastructure.');
+  else root.innerHTML='<h2>activity</h2>'+table(['when','project','action','actor'],(data.events || []).sort((a,b)=>b.at.localeCompare(a.at)).map(e=>[esc(e.at),esc(e.project),esc(e.type),esc(e.actor)]));
 }
 export async function refreshControl() {
   root.innerHTML=empty('Loading project records…');
-  try {data=await api('/api/control');render();}catch(e){root.innerHTML=`<h2>project records unavailable</h2>${empty(e.message)}<button data-retry>try again</button>`;}
+  try {data=await api('/api/control');data.events=await api('/api/control/events');render();}catch(e){root.innerHTML=`<h2>project records unavailable</h2>${empty(e.message)}<button data-retry>try again</button>`;}
 }
 export async function showControl(value) {section=value;if(!data)await refreshControl();else render();}
 root.addEventListener('click',async event=>{
@@ -46,12 +47,47 @@ root.addEventListener('click',async event=>{
   if(el.hasAttribute('data-project')) {selected=el.dataset.project;section='projects';tab='overview';render();}
   if(el.hasAttribute('data-back')) {selected=null;render();}
   if(el.hasAttribute('data-project-tab')) {tab=el.dataset.projectTab;render();}
+  if(el.hasAttribute('data-edit-assignment'))editAssignment(data.assignments.find(a=>a.id===el.dataset.editAssignment));
+  if(el.hasAttribute('data-create-assignment'))editAssignment({project:el.dataset.createAssignment,status:'READY'});
+  if(el.hasAttribute('data-register-agent'))registerAgent(el.dataset.registerAgent);
+  if(el.hasAttribute('data-freeze')) {
+    const p=data.projects.find(p=>p.id===el.dataset.freeze);
+    confirmAction(`${p.frozen?'Unfreeze':'Freeze'} new work in ${p.name || p.id}?`, 'This gates new assignments and assignment starts. It does not pause existing scheduler jobs.', {action:'freeze',project:p.id,expected_revision:p._sha,frozen:!p.frozen});
+  }
+  if(el.hasAttribute('data-cleanup')) {
+    const p=data.projects.find(p=>p.id===el.dataset.projectId), b=p.inventory.branches.find(b=>b.name===el.dataset.cleanup);
+    confirmAction(`Delete ${b.name}?`, `Zero unique commits against main ${p.inventory.main_sha}. No open PR or active assignment. Runner rechecks the exact head ${b.sha} immediately before deletion.`, {action:'cleanup',project:p.id,branch:b.name,expected_sha:b.sha,expected_main:p.inventory.main_sha,confirm:true});
+  }
   if(el.hasAttribute('data-retry'))await refreshControl();
   if(el.hasAttribute('data-refresh-project')) {
     busy=true;render();
-    try {const p=await api(`/api/control/projects/${encodeURIComponent(el.dataset.refreshProject)}/refresh`);data.projects=data.projects.map(v=>v.id===p.id?p:v);data.assignments=data.projects.flatMap(p=>p.assignments);data.attention=data.projects.flatMap(p=>p.attention);}catch(e){root.innerHTML+=empty(e.message);}finally {busy=false;render();}
+    try {await action({action:'refresh',project:el.dataset.refreshProject});await refreshControl();}catch(e){root.innerHTML+=empty(e.message);}finally {busy=false;render();}
   }
   if(el.hasAttribute('data-handoff')) {
     try {const result=await api(`/api/control/projects/${encodeURIComponent(el.dataset.projectId)}/handoff?assignment=${encodeURIComponent(el.dataset.handoff)}`);await navigator.clipboard.writeText(result.text);el.textContent='copied';}catch(e){const area=document.createElement('textarea');area.className='control-packet';area.value=e.message;root.append(area);}
   }
 });
+
+async function action(body) {const result=await api('/api/control/actions',{method:'POST',body:JSON.stringify(body)});if(result.uncertain)throw new Error(result.error+' — inspect state before retrying');return result;}
+function drawer(title,content,onSave) {
+  dialog?.remove();dialog=document.createElement('dialog');dialog.className='control-drawer';
+  dialog.innerHTML=`<form><h2>${esc(title)}</h2>${content}<p class="control-form-error" role="alert"></p><div class="control-actions"><button type="button" data-cancel>cancel</button><button type="submit">confirm and save</button></div></form>`;
+  document.body.append(dialog);dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();dialog.addEventListener('close',()=>dialog.remove());dialog.showModal();
+  dialog.querySelector('form').onsubmit=async e=>{e.preventDefault();const submit=dialog.querySelector('[type=submit]');submit.disabled=true;try {await onSave(new FormData(e.target));dialog.close();await refreshControl();}catch(e){dialog.querySelector('[role=alert]').textContent=e.message;}finally{submit.disabled=false;}};
+}
+function field(label,name,value='',type='text') {return `<label>${esc(label)}<input name="${name}" type="${type}" value="${esc(value)}"></label>`;}
+function lines(label,name,value=[]) {return `<label>${esc(label)}<textarea name="${name}">${esc(value.join('\n'))}</textarea></label>`;}
+function editAssignment(a) {
+  const states=['READY','ACTIVE','WAITING_QA','DEFERRED','BLOCKED','HUMAN_QA','SUPERSEDED','ARCHIVED'];
+  drawer(a.id?'manage assignment':'new assignment', `${a.id?`<p>${esc(a.id)}</p>`:field('assignment ID','id')}${field('goal','goal',a.goal)}<label>status<select name="status">${states.map(s=>`<option ${a.status===s?'selected':''}>${s}</option>`).join('')}</select></label><label>owner<select name="owner_agent"><option value="">unassigned</option>${data.agents.filter(v=>v.project===a.project).map(v=>`<option value="${esc(v.id)}" ${a.owner_agent===v.id?'selected':''}>${esc(v.name || v.id)}</option>`).join('')}</select></label>${field('domain','domain',a.domain)}${field('branch','branch',a.branch)}${field('PR number (optional)','pr',a.pr,'number')}${field('next action','next_action',a.next_action)}${lines('owned paths — one pattern per line','owned_paths',a.owned_paths)}${lines('protected paths — one pattern per line','protected_paths',a.protected_paths)}${lines('acceptance criteria — one per line','acceptance_criteria',a.acceptance_criteria)}<p>Changes are audited. Completion requires verified promotion evidence.</p>`, async f=>{
+    const patch=Object.fromEntries(['goal','status','owner_agent','domain','branch','next_action'].map(k=>[k,String(f.get(k))]));patch.pr=f.get('pr')?Number(f.get('pr')):null;
+    for(const k of ['owned_paths','protected_paths','acceptance_criteria'])patch[k]=String(f.get(k)).split('\n').map(s=>s.trim()).filter(Boolean);
+    await action({action:'assignment',project:a.project,id:a.id || f.get('id'),expected_revision:a._sha || null,patch});
+  });
+}
+function registerAgent(project) {
+  drawer('register an existing agent',`${field('stable agent ID','id')}${field('display name','name')}<label>role<select name="role"><option>worker</option><option>master</option><option>pjm</option><option>human</option></select></label>${field('mission','mission')}${field('domain','domain')}${field('runtime (codex, chatgpt, runner, human…)','runtime','codex')}${field('existing thread URL (optional)','thread_url')}<label class="control-check"><input type="checkbox" name="confirmed" required>this is an existing user-visible agent; registration does not create or wake a chat</label>`,async f=>{
+    const agent=Object.fromEntries(['id','name','role','mission','domain','runtime','thread_url'].map(k=>[k,String(f.get(k))]));await action({action:'register-agent',project,agent,existing_thread_confirmed:f.has('confirmed')});
+  });
+}
+function confirmAction(title,explanation,body) {drawer(title,`<p>${esc(explanation)}</p>`,()=>action(body));}

@@ -34,9 +34,9 @@ export async function readRecords(request, folder, ref='main') {
   }
   return records;
 }
-export async function registry(request) {
+export async function registry(request, {controlRef="control"}={}) {
   const [baseProjects,baseAssignments,overrideProjects,overrideAssignments,agents]=await Promise.all([
-    readRecords(request,'projects'),readRecords(request,'assignments'),readRecords(request,'control-data/projects','control'),readRecords(request,'control-data/assignments','control'),readRecords(request,'control-data/agents','control')
+    readRecords(request,'projects'),readRecords(request,'assignments'),readRecords(request,'control-data/projects',controlRef),readRecords(request,'control-data/assignments',controlRef),readRecords(request,'control-data/agents',controlRef)
   ]);
   const merge=(base,overlay)=>[...new Map([...base,...overlay].map(v=>[v.id,v])).values()];
   return {projects:merge(baseProjects,overrideProjects),assignments:merge(baseAssignments,overrideAssignments),agents};

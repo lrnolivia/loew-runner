@@ -11,3 +11,7 @@ README now states current shipped behavior and routes to canonical state/spec/as
 ## 3.0-A implementation checkpoint
 
 Added pure overlap/attention/cleanup-proof rules, GitHub pagination/registry/inventory adapter, local+hosted read APIs, and project-first dashboard surfaces while preserving Visual/automation code. No mutation enabled. Existing syntax script only checked the first expanded file; replaced with explicit per-file checks. Local syntax and seven test files pass. Runtime QA and hosted checks pending; release remains 0.6.0 / 3.0 preview.
+
+## 3.0-B implementation checkpoint
+
+Guarded assignment edits, existing-agent registration, project freeze, saved repo refresh and proof-gated cleanup now have same-origin JSON guards, pinned control-head reads and atomic audit/control commits. No completion or QA pass can be manufactured by the form. Repo deletion records intent, refreshes SHAs/open PRs and reports uncertain provider outcomes instead of retrying. Browser checks pending.
