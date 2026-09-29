@@ -7,6 +7,8 @@ import { runWorker } from "./runner.mjs";
 import { loadState } from "./state.mjs";
 import { dispatchWorkflow } from "./github.mjs";
 
+import { controlApi } from "./control-api.mjs";
+
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DASHBOARD = path.join(HERE, "..", "dashboard");
 const PORT = Number(process.env.PORT ?? 4242);
@@ -40,6 +42,12 @@ async function workersView() {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://localhost:${PORT}`);
+
+    if (url.pathname.startsWith("/api/control")) {
+      const result = await controlApi(new Request(url, { method: req.method }), process.env.RUNNER_GITHUB_TOKEN);
+      res.writeHead(result.status, Object.fromEntries(result.headers));
+      return res.end(await result.text());
+    }
 
     if (req.method === "GET" && url.pathname === "/api/workers") {
       return json(res, 200, await workersView());

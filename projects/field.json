@@ -118,5 +118,7 @@
       ],
       "keep_current_field_prefix_until_workflow_compatibility_verified": true
     }
-  }
+  },
+  "stage": "Stage 0",
+  "milestone": "Stage 0 convergence after repository reconciliation"
 }
