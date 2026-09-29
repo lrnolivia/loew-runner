@@ -110,6 +110,21 @@ A bounded defect in runner-owned workflow, metadata, dependency setup, Git bookk
 
 See `BLOCKER_POLICY.md`.
 
+## Shared repair propagation
+
+For managed projects that declare a shared-repair ledger, runner performs baseline reconciliation deterministically and independently of the OpenAI worker loop.
+
+- read the project's canonical shared-repair ledger
+- require resolved `mandatory_baseline` repair SHAs on applicable open implementation PRs
+- treat a satisfied repair as Git ancestry, not a copied patch
+- block automatic reconciliation when repair-changed paths overlap the PR's changed paths
+- otherwise use GitHub's clean update-branch operation to converge the PR on current canonical `main`
+- verify repair ancestry after the head advances
+- record exact results in runner-owned state
+- never recreate the shared fix or use cherry-pick as the normal propagation path
+
+Missing OpenAI credentials must not disable this deterministic reconciliation path. Missing GitHub write authority is a real blocker.
+
 ## 9. Promotion
 
 Automatic merge is permitted only when the project manifest enables it and the exact-SHA promotion gate passes.

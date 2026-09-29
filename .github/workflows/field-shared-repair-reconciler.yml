@@ -1,0 +1,42 @@
+name: field shared repair reconciler
+
+on:
+  schedule:
+    - cron: '13 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: field-shared-repair-reconciler
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Reconcile mandatory field repair baselines
+        env:
+          RUNNER_GITHUB_TOKEN: ${{ secrets.RUNNER_GITHUB_TOKEN }}
+        run: node scripts/reconcile-shared-repairs.mjs
+
+      - name: Persist reconciliation state
+        if: always()
+        run: |
+          if git diff --quiet -- state/shared-repairs.json; then
+            echo "No shared-repair state change."
+            exit 0
+          fi
+          git config user.name "loew-runner"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/shared-repairs.json
+          git commit -m "runner: persist shared repair state"
+          git pull --rebase origin main
+          git push
