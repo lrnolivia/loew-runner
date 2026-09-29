@@ -20,9 +20,9 @@
   <main class="shell">
     <header class="brand-header">
       <div>
-        <div class="eyebrow">LOEW.FI / RUNNER</div>
+        
         <h1>runner</h1>
-        <p class="lede">headless by default · open for intervention</p>
+        <p class="lede">projects, people and work · 3.0 in development</p>
       </div>
       <div class="header-status">
         <span id="connection" class="status-pill status-neutral">
@@ -34,18 +34,19 @@
 
     <div class="app-toolbar terra-toolbar" data-figma-component="App / Toolbar">
       <nav class="primary-nav" aria-label="Runner">
-        <button class="primary-nav-item active" data-section="workers" type="button">workers</button>
+        <button class="primary-nav-item" data-section="home" type="button">home</button><button class="primary-nav-item" data-section="projects" type="button">projects</button><button class="primary-nav-item" data-section="team" type="button">team</button><button class="primary-nav-item" data-section="assignments" type="button">assignments</button>
         <button class="primary-nav-item" data-section="visual" type="button">visual</button>
-      </nav>
+      <button class="primary-nav-item" data-section="infrastructure" type="button">infrastructure</button><button class="primary-nav-item" data-section="activity" type="button">activity</button></nav>
       <div class="toolbar-actions">
         <span id="toolbar-context" class="toolbar-meta">CONFIG · RECOVERY · DIAGNOSTICS</span>
         <button id="refresh" class="tp-button secondary compact" type="button">Refresh</button>
       </div>
     </div>
 
+    <section id="control-section" class="app-section" aria-live="polite"></section>
     <div id="workers-section" class="app-grid app-section">
-      <aside class="sidebar" aria-label="Workers">
-        <div class="section-kicker">WORKERS</div>
+      <aside class="sidebar" aria-label="Automations">
+        <div class="section-kicker">AUTOMATIONS</div>
         <div id="worker-nav" class="worker-nav"></div>
         <div class="sidebar-note">Target repositories remain read-only unless a guarded workflow explicitly says otherwise.</div>
       </aside>
@@ -98,7 +99,7 @@
     </section>
 
     <footer>
-      <span>loew-runner · v0.6</span>
+      <span>loew runner · 3.0 preview</span>
       <span>Terra Prime Application UI</span>
     </footer>
   </main>

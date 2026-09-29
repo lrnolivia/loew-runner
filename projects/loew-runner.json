@@ -1,0 +1,16 @@
+{
+  "id": "loew-runner",
+  "name": "runner",
+  "repository": "lrnolivia/loew-runner",
+  "managed": true,
+  "default_branch": "main",
+  "stage": "3.0-A",
+  "milestone": "human control plane",
+  "cleanup": {
+    "protected_branches": [
+      "control",
+      "shared-repair-reconciler",
+      "status/field-runner-authority-20260929"
+    ]
+  }
+}

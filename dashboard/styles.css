@@ -1084,3 +1084,42 @@ body[data-view="overview"] .diagnostics-only { display: none; }
   .run-review-head { align-items: flex-start; flex-direction: column; }
   .run-review-policy { justify-items: start; }
 }
+
+/* 3.0 operates inside the established Terra Prime application world. */
+.shell { width:min(1440px,calc(100% - 32px)); padding-top:20px; }
+.brand-header { margin-bottom:16px; align-items:center; }
+h1 { font-size:32px; margin:0; }
+.lede { margin-top:6px; font-size:12px; }
+.app-toolbar { border-radius:4px; padding:0 10px; }
+.primary-nav { flex-wrap:wrap; }
+#control-section { padding:24px 0; }
+.control-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:20px; }
+.control-heading h2, #control-section > h2 { font-size:24px; margin:0 0 8px; }
+.control-heading p { margin:0; color:var(--color-text-secondary); }
+#control-section h3 { margin:28px 0 10px; font-size:14px; }
+.control-table-wrap { overflow:auto; border:1px solid var(--color-border); border-radius:3px; }
+.control-table { border-collapse:collapse; width:100%; text-align:left; font-size:13px; }
+.control-table th { padding:10px 12px; background:var(--color-surface); color:var(--color-text-secondary); font-size:12px; font-weight:600; }
+.control-table td { padding:12px; border-top:1px solid var(--color-border); vertical-align:top; }
+.control-table tr:hover td { background:var(--color-surface); }
+.control-table small { display:block; margin-top:4px; color:var(--color-text-secondary); font-size:11px; }
+.control-table code { font-size:11px; overflow-wrap:anywhere; }
+#control-section button { border:1px solid var(--color-border); background:var(--color-raised); border-radius:3px; padding:7px 10px; cursor:pointer; }
+#control-section button:hover { background:var(--color-interactive); }
+#control-section .control-link { padding:0; background:transparent; border:0; text-align:left; color:var(--color-text-primary); text-decoration:underline; text-underline-offset:3px; }
+#control-section a { color:var(--color-text-primary); text-underline-offset:3px; }
+.control-status { display:inline-block; font-size:11px; border:1px solid var(--color-border); padding:2px 6px; white-space:nowrap; }
+.control-status[data-state="error"],.control-status[data-state="blocked"],.control-status[data-state="collision"],.control-status[data-state="protected"] { color:#ffb294; }
+.control-status[data-state="attention"],.control-status[data-state="warning"],.control-status[data-state="potential"] { color:var(--color-warning); }
+.control-status[data-state="healthy"],.control-status[data-state="approved"] { color:#7ed5d1; }
+.control-empty,.control-notice { padding:14px; background:var(--color-surface); color:var(--color-text-secondary); font-size:13px; overflow-wrap:anywhere; }
+.control-tabs,.control-actions { display:flex; gap:6px; flex-wrap:wrap; }
+.control-tabs { margin:0 0 18px; }
+.control-tabs button[aria-current="page"] { border-color:var(--color-photo)!important; background:var(--color-interactive)!important; }
+.control-table details p,.control-table details ul { max-width:65ch; }
+.control-table summary { cursor:pointer; }
+.control-packet { width:100%; min-height:240px; background:var(--color-surface); color:var(--color-text-primary); }
+button:focus-visible,a:focus-visible,summary:focus-visible { outline:2px solid #7ed5d1; outline-offset:3px; }
+button:disabled { opacity:.6; cursor:wait!important; }
+::selection { background:#1c666c; color:#fff; }
+@media(max-width:760px) { .shell {width:calc(100% - 20px);} .app-toolbar,.control-heading {flex-direction:column;align-items:stretch;} .toolbar-actions {justify-content:space-between;} .toolbar-meta {display:none;} .primary-nav {gap:0;} .primary-nav-item {padding:10px 8px;} }

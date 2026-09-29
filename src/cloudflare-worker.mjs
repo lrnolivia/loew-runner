@@ -1,3 +1,4 @@
+import { controlApi } from "./control-api.mjs";
 import { applyWorkerSettings, publicWorkerSettings } from "./settings.mjs";
 import { listVisualEvidence, getVisualEvidence, getVisualImage, compareVisualEvidence, listVisualRuns, reviewVisualRun } from "./visual-evidence.mjs";
 const GITHUB_API = "https://api.github.com";
@@ -224,6 +225,8 @@ async function handleApi(request, env) {
 
   const tokenError = tokenGuard(env);
   if (tokenError) return tokenError;
+
+  if (url.pathname.startsWith("/api/control")) return controlApi(request, env.RUNNER_GITHUB_TOKEN);
 
   if (request.method === "GET" && url.pathname === "/api/workers") {
     return json(await workersView(env));

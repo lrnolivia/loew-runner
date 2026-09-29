@@ -42,3 +42,7 @@ Temporary local build checkpoints are separate from this remote baseline. `runne
 4. 3.0-C: structured consolidation and deterministic handoffs; prose conflicts remain reviewable.
 5. 3.0-D: consume existing infrastructure records; show unknown when capacity has no authoritative measurement.
 6. 3.0-E: runtime/accessibility verification and final replacement cleanup. Version 3.0 only after release acceptance.
+
+## 3.0-A branch checkpoint (not main/deployed)
+
+`runner/3-a-control-plane` implements read-only project control surfaces and explicit repository refresh. Current missing Team records remain empty, not synthesized from historic reports. No guarded mutation is enabled. Both adapters route `/api/control`; hosted Access/token gates remain intact. Local syntax and seven test files pass; runtime/hosted evidence still pending. Control overlays use `control-data/` on `control`, leaving old scheduler state untouched.

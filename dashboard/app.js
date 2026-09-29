@@ -1,3 +1,4 @@
+import { showControl, refreshControl } from "./control.js";
 const workersEl = document.querySelector("#workers");
 const workerNavEl = document.querySelector("#worker-nav");
 const summaryEl = document.querySelector("#summary");
@@ -18,7 +19,7 @@ const visualClearFilters = document.querySelector("#visual-clear-filters");
 
 let selectedWorkerId = null;
 let currentWorkers = [];
-let currentSection = "workers";
+let currentSection = "home";
 let visualEvidence = [];
 let visualRuns = [];
 let selectedRunId = null;
@@ -403,16 +404,16 @@ async function loadVisual() {
 }
 
 function setSection(section) {
-  currentSection = section === "visual" ? "visual" : "workers";
-  document.body.dataset.section = currentSection;
-  workersSection.hidden = currentSection !== "workers";
-  visualSection.hidden = currentSection !== "visual";
-  primaryNav.forEach(item => item.classList.toggle("active", item.dataset.section === currentSection));
-  toolbarContext.textContent = currentSection === "visual"
-    ? "INSPECTOR · BROWSER EVIDENCE"
-    : "CONFIG · RECOVERY · DIAGNOSTICS";
-  if (currentSection === "visual") loadVisual();
-  else load();
+  currentSection = section;
+  document.body.dataset.section = section;
+  workersSection.hidden = section !== "infrastructure";
+  visualSection.hidden = section !== "visual";
+  document.querySelector("#control-section").hidden = ["infrastructure","visual"].includes(section);
+  primaryNav.forEach(item => { item.classList.toggle("active", item.dataset.section === section); item.setAttribute("aria-current", item.dataset.section === section ? "page" : "false"); });
+  toolbarContext.textContent = section === "visual" ? "INSPECTOR EVIDENCE" : section === "infrastructure" ? "AUTOMATIONS" : "PROJECT CONTROL";
+  if (section === "visual") loadVisual();
+  else if (section === "infrastructure") load();
+  else showControl(section);
 }
 
 function statusTone(value) {
@@ -651,7 +652,7 @@ async function load() {
   }
 }
 
-refreshButton.addEventListener("click", () => currentSection === "visual" ? loadVisual() : load());
+refreshButton.addEventListener("click", () => currentSection === "visual" ? loadVisual() : currentSection === "infrastructure" ? load() : refreshControl());
 [visualProjectFilter, visualEnvironmentFilter, visualPrFilter].forEach(control => {
   control?.addEventListener("change", () => {
     selectedRunId = null;
@@ -683,4 +684,4 @@ tabs.forEach((tab) => {
   });
 });
 
-load();
+setSection("home");

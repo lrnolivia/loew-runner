@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "runner-3-human-control-plane",
   "project": "loew-runner",
-  "status": "ready",
+  "status": "active",
   "mode": "plan-to-action",
   "type": "product-platform-upgrade",
   "execution_class": "first-class-worker",
@@ -145,5 +145,9 @@
     "All control actions are auditable.",
     "Core 3.0 remains fully useful with no OPENAI_API_KEY."
   ],
-  "implementation_note": "Do not build the whole release as one mega-branch. Implement each 3.0 tranche through bounded short-lived branches/PRs and preserve the existing visual evidence surface and current control functionality during migration."
+  "implementation_note": "Do not build the whole release as one mega-branch. Implement each 3.0 tranche through bounded short-lived branches/PRs and preserve the existing visual evidence surface and current control functionality during migration.",
+  "branch": "runner/3-a-control-plane",
+  "domain": "human-control-plane",
+  "tranche": "3.0-A",
+  "next_action": "Build read-only project truth and dashboard; preserve infrastructure ownership."
 }
