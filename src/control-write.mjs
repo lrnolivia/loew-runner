@@ -1,4 +1,5 @@
-import { validId, encodePath, readFile, registry, inventory } from './control-github.mjs';
+import { notesInventory, digest } from "./control-notes.mjs";
+import { validId, encodePath, readFile, readRecords, registry, inventory } from './control-github.mjs';
 import { STATES, statusOf, ACTIVE, cleanupProof, deriveProject } from './control-plane.mjs';
 const ROOT='lrnolivia/loew-runner';
 const fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
@@ -66,6 +67,25 @@ export async function mutate(gh, body, actor='dashboard user') {
     const state=await inventory(gh,project);
     if(!state.complete)fail(state.error || 'Incomplete inventory',503);
     return atomicControlWrite(gh,head,[{path:`control-data/snapshots/${project.id}.json`,value:{id:project.id,inventory:state}}],event);
+  }
+  if(body.action==='consolidate') {
+    const snapshots=await readRecords(gh,'control-data/snapshots',head);
+    const value=digest(project,records.assignments,records.agents,snapshots.find(s=>s.id===project.id)?.inventory);
+    return {...await atomicControlWrite(gh,head,[{path:`control-data/digests/${project.id}.json`,value}],event),digest:value};
+  }
+  if(body.action==='reconcile') {
+    const value={id:project.id,...await notesInventory(gh,project)};
+    return {...await atomicControlWrite(gh,head,[{path:`control-data/trackers/${project.id}.json`,value}],event),inventory:value};
+  }
+  if(body.action==='archive-duplicates') {
+    if(body.confirm!==true)fail('Review the proposed archive index first');
+    const current=await notesInventory(gh,project);
+    if(current.head_sha!==body.expected_sha)fail('Notes changed; reconcile again',409);
+    // Archive duplicate references in the canonical index; original Git files remain recoverable.
+    const active=records.assignments.filter(a=>a.project===project.id && ACTIVE.has(statusOf(a.status)));
+    const safe=current.duplicates.filter(s=>!active.some(a=>(a.notes_sources || []).includes(s.path)));
+    const value={id:project.id,head_sha:current.head_sha,archived_references:safe,original_files_preserved:true,at:new Date().toISOString()};
+    return {...await atomicControlWrite(gh,head,[{path:`control-data/archives/${project.id}.json`,value}],event),archive:value};
   }
   if(body.action==='cleanup') {
     if(body.confirm!==true || !body.branch || !body.expected_sha || !body.expected_main)fail('Cleanup requires reviewed branch and exact SHAs');

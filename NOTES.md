@@ -15,3 +15,7 @@ Added pure overlap/attention/cleanup-proof rules, GitHub pagination/registry/inv
 ## 3.0-B implementation checkpoint
 
 Guarded assignment edits, existing-agent registration, project freeze, saved repo refresh and proof-gated cleanup now have same-origin JSON guards, pinned control-head reads and atomic audit/control commits. No completion or QA pass can be manufactured by the form. Repo deletion records intent, refreshes SHAs/open PRs and reports uncertain provider outcomes instead of retrying. Browser checks pending.
+
+## 3.0-C implementation checkpoint
+
+Dashboard consolidation persists a structured digest, reconciliation inventories configured source paths and exact blob duplicates, and guarded archive writes an archive-reference index without removing originals. Prose-only conflicts stay Needs review. Handoff clipboard failure now exposes selectable text instead of losing the packet. No model call involved.

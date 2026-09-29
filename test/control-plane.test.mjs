@@ -47,3 +47,11 @@ test('assignment edits enforce owner, dependency graph, freeze and truthful comp
   assert.equal(assignmentUpdate(a,{owner_agent:'owner',status:'active'},records).status,'ACTIVE');
   records.projects[0].frozen=true;assert.throws(()=>assignmentUpdate({id:'new',project:'p',status:'ARCHIVED'},{status:'ACTIVE'},records),/frozen/);
 });
+import { notesInventory, digest } from '../src/control-notes.mjs';
+test('notes reconciliation uses blob identity and preserves prose uncertainty',async()=>{
+  const gh=async route=>route.includes('/commits/')?{sha:'main',commit:{tree:{sha:'tree'}}}:{truncated:false,tree:[{type:'blob',path:'docs/STATE.md',sha:'same'},{type:'blob',path:'reports/old.md',sha:'same'},{type:'blob',path:'reports/other.md',sha:'different'}]};
+  const notes=await notesInventory(gh,{id:'p',repository:'a/b'});
+  assert.equal(notes.duplicates[0].superseded_by,'docs/STATE.md');
+  assert.equal(notes.needs_review[0].path,'reports/other.md');
+  assert(!digest({id:'p'},[],[],null).repository_snapshot);
+});
