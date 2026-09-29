@@ -23,8 +23,11 @@ function projectView(p) {
   if(tab==='map')content=table(['relationship','evidence','exact paths'],p.overlap.map(e=>[`${esc(e.a)} ↔ ${esc(e.b)}`,`${badge(e.severity)}<small>${esc(e.evidence)}</small>`,e.paths.map(v=>`<code>${esc(v)}</code>`).join('<br>')]))+empty('Declared ownership and changed-file evidence are compared deterministically. Missing ownership is not proof of no conflict.');
   if(tab==='repo')content=`<h3>pull requests</h3>${table(['PR','branch','head SHA','updated'],p.inventory.prs.map(v=>[`<a href="${esc(v.url)}" target="_blank" rel="noopener">#${esc(v.number)} ${esc(v.title)}</a>`,esc(v.head),`<code>${esc(v.sha)}</code>`,esc(v.updated_at)]))}<h3>branch cleanup ledger</h3>${table(['branch','assignment','ahead / behind','disposition / proof'],p.inventory.branches.map(b=>[esc(b.name),esc(b.assignment || 'unlinked'),`${esc(b.ahead)} / ${esc(b.behind)}`,b.cleanup.safe?`<button data-cleanup="${esc(b.name)}" data-project-id="${esc(p.id)}">review safe deletion</button>`:`KEEP / REVIEW<small>${esc(b.cleanup.reasons.join('; '))}</small>`]))}`;
   if(tab==='qa')content=table(['assignment','exact SHA','classification'],p.assignments.map(a=>[esc(a.id),`<code>${esc(a.head_sha || 'unverified')}</code>`,badge(a.qa)]))+empty('NOT_RUN and stale evidence do not count as passes. Provider capacity is handled by infrastructure ownership.');
-  if(tab==='notes')content=`<h3>canonical sources</h3>${table(['source','purpose'],[['docs/STATE.md','current verified state'],['assignment JSON','structured work'],['reports/','provenance; needs review before consolidation']].map(r=>r.map(esc)))}<p>Structured consolidation and guarded tracker reconciliation arrive in tranche 3.0-C.</p>`;
-  if(tab==='history')content=empty('Audit history is not available yet. No dashboard mutations are enabled in 3.0-A.');
+  if(tab==='notes') {
+    const tracker=data.trackers?.find(v=>v.id===p.id), digest=data.digests?.find(v=>v.id===p.id);
+    content=`<div class="control-actions"><button data-consolidate="${esc(p.id)}">consolidate status</button><button data-reconcile="${esc(p.id)}">reconcile trackers</button>${tracker?`<button data-archive="${esc(p.id)}">review duplicate archive</button>`:''}<button data-copy-digest="${esc(p.id)}">copy status</button></div><h3>canonical structured digest</h3>${digest?`<pre class="control-json">${esc(JSON.stringify(digest,null,2))}</pre>`:empty('No digest generated yet. Consolidation uses structured records only; contradictory prose stays under review.')}<h3>notes and tracker index</h3>${tracker?table(['source','status','superseded by'],tracker.sources.map(s=>[esc(s.path),badge(s.status),esc(s.superseded_by || (s.canonical?'canonical configured source':'needs human review'))])):empty('Reconcile to inventory configured sources and identify exact duplicates. Original files stay intact. Semantic conflicts cannot be auto-archived.')}`;
+  }
+  if(tab==='history')content=table(['when','action','actor'],(data.events || []).filter(e=>e.project===p.id).sort((a,b)=>b.at.localeCompare(a.at)).map(e=>[esc(e.at),esc(e.type),esc(e.actor)]));
   return `<div class="control-heading"><div><button class="control-link" data-back>all projects</button><h2>${esc(p.name || p.id)}</h2><p>${esc(p.repository)} · ${esc(p.stage || 'stage not recorded')} · ${badge(p.health)}</p></div><div class="control-actions"><button data-freeze="${esc(p.id)}">${p.frozen?'unfreeze new work':'freeze new work'}</button><button data-refresh-project="${esc(p.id)}" ${busy?'disabled':''}>${busy?'refreshing…':'refresh repository truth'}</button><button data-handoff="" data-project-id="${esc(p.id)}">copy project handoff</button></div></div><p class="control-notice">${p.inventory.complete?`Repository evidence: ${esc(p.inventory.refreshed_at)}${p.inventory.stale?' · saved snapshot; refresh before acting':''}`:`Repository truth unverified: ${esc(p.inventory.error)}. Refresh is read-only.`}</p><nav class="control-tabs" aria-label="Project workspace">${tabs.map(v=>`<button data-project-tab="${v}" aria-current="${tab===v?'page':'false'}">${v}</button>`).join('')}</nav>${content}`;
 }
 function render() {
@@ -39,7 +42,7 @@ function render() {
 }
 export async function refreshControl() {
   root.innerHTML=empty('Loading project records…');
-  try {data=await api('/api/control');data.events=await api('/api/control/events');render();}catch(e){root.innerHTML=`<h2>project records unavailable</h2>${empty(e.message)}<button data-retry>try again</button>`;}
+  try {data=await api('/api/control');[data.events,data.digests,data.trackers,data.infrastructure]=await Promise.all(['/api/control/events','/api/control/digests','/api/control/trackers','/api/control/infrastructure'].map(api));render();}catch(e){root.innerHTML=`<h2>project records unavailable</h2>${empty(e.message)}<button data-retry>try again</button>`;}
 }
 export async function showControl(value) {section=value;if(!data)await refreshControl();else render();}
 root.addEventListener('click',async event=>{
@@ -58,13 +61,22 @@ root.addEventListener('click',async event=>{
     const p=data.projects.find(p=>p.id===el.dataset.projectId), b=p.inventory.branches.find(b=>b.name===el.dataset.cleanup);
     confirmAction(`Delete ${b.name}?`, `Zero unique commits against main ${p.inventory.main_sha}. No open PR or active assignment. Runner rechecks the exact head ${b.sha} immediately before deletion.`, {action:'cleanup',project:p.id,branch:b.name,expected_sha:b.sha,expected_main:p.inventory.main_sha,confirm:true});
   }
+  if(el.hasAttribute('data-consolidate') || el.hasAttribute('data-reconcile')) {
+    el.disabled=true;
+    try {await action({action:el.hasAttribute('data-consolidate')?'consolidate':'reconcile',project:el.dataset.consolidate || el.dataset.reconcile});await refreshControl();}catch(e){packet('action could not complete',e.message);}finally{el.disabled=false;}
+  }
+  if(el.hasAttribute('data-copy-digest')) {const d=data.digests.find(d=>d.id===el.dataset.copyDigest);if(d)await copyPacket(JSON.stringify(d,null,2),el);else packet('status not yet consolidated','Click consolidate status first.');}
+  if(el.hasAttribute('data-archive')) {
+    const t=data.trackers.find(t=>t.id===el.dataset.archive);
+    confirmAction('Archive exact duplicate references?',`${t.duplicates.length} duplicate sources found. Active assignment references are excluded. Originals stay in Git; only the consolidated archive index changes. Prose conflicts stay under review.`,{action:'archive-duplicates',project:t.id,expected_sha:t.head_sha,confirm:true});
+  }
   if(el.hasAttribute('data-retry'))await refreshControl();
   if(el.hasAttribute('data-refresh-project')) {
     busy=true;render();
     try {await action({action:'refresh',project:el.dataset.refreshProject});await refreshControl();}catch(e){root.innerHTML+=empty(e.message);}finally {busy=false;render();}
   }
   if(el.hasAttribute('data-handoff')) {
-    try {const result=await api(`/api/control/projects/${encodeURIComponent(el.dataset.projectId)}/handoff?assignment=${encodeURIComponent(el.dataset.handoff)}`);await navigator.clipboard.writeText(result.text);el.textContent='copied';}catch(e){const area=document.createElement('textarea');area.className='control-packet';area.value=e.message;root.append(area);}
+    try {const result=await api(`/api/control/projects/${encodeURIComponent(el.dataset.projectId)}/handoff?assignment=${encodeURIComponent(el.dataset.handoff)}`);await copyPacket(result.text,el);}catch(e){packet('handoff could not load',e.message);}
   }
 });
 
@@ -91,3 +103,6 @@ function registerAgent(project) {
   });
 }
 function confirmAction(title,explanation,body) {drawer(title,`<p>${esc(explanation)}</p>`,()=>action(body));}
+
+function packet(title,text) {const area=document.createElement('section');area.className='control-packet-panel';area.innerHTML=`<h3>${esc(title)}</h3><textarea class="control-packet" readonly aria-label="Generated packet">${esc(text)}</textarea>`;root.append(area);area.querySelector('textarea').focus();area.querySelector('textarea').select();}
+async function copyPacket(text,button) {try {await navigator.clipboard.writeText(text);if(button)button.textContent='copied';}catch{packet('copy this packet',text);}}
