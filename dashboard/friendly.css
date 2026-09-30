@@ -16,7 +16,7 @@
 }
 .friendly-label {
   color: var(--color-neutral);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -29,4 +29,15 @@
 }
 @media (max-width: 780px) {
   .friendly-status { grid-template-columns: 1fr; }
+}
+
+.friendly-status section:first-child {
+  background: var(--color-light-panel);
+  color: var(--color-on-light);
+}
+.friendly-status section:first-child .friendly-label {
+  color: var(--color-on-light-secondary);
+}
+.friendly-status section:first-child .friendly-copy {
+  color: var(--color-on-light);
 }
