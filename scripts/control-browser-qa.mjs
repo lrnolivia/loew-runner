@@ -36,6 +36,8 @@ try {
     });
     await page.goto(origin);
     await page.getByRole('heading',{name:'what needs you?'}).waitFor();
+    assert.equal(await page.locator('#workers-section').isVisible(),false,'automations are hidden outside Infrastructure');
+    await page.getByText('CONNECTED',{exact:true}).waitFor();
     await page.getByRole('button',{name:'field',exact:true}).click();
     await page.getByRole('button',{name:'map',exact:true}).click();
     await page.getByText('src/camera.ts',{exact:true}).waitFor();

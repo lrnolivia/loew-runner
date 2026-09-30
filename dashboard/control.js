@@ -43,12 +43,12 @@ function render() {
 }
 export async function refreshControl() {
   notice='';root.innerHTML=empty('Loading project records…');
-  try {data=await api('/api/control');[data.events,data.digests,data.trackers,data.infrastructure]=await Promise.all(['/api/control/events','/api/control/digests','/api/control/trackers','/api/control/infrastructure'].map(api));render();}catch(e){root.innerHTML=`<h2>project records unavailable</h2>${empty(e.message)}<button data-retry>try again</button>`;}
+  try {data=await api('/api/control');window.dispatchEvent(new CustomEvent('runner-control-state',{detail:{ok:true}}));[data.events,data.digests,data.trackers,data.infrastructure]=await Promise.all(['/api/control/events','/api/control/digests','/api/control/trackers','/api/control/infrastructure'].map(api));render();}catch(e){window.dispatchEvent(new CustomEvent('runner-control-state',{detail:{ok:false,message:e.message}}));root.innerHTML=`<h2>project records unavailable</h2>${empty(e.message)}<button data-retry>try again</button>`;}
 }
 export async function showControl(value) {section=value;if(!data)await refreshControl();else render();}
 root.addEventListener('click',async event=>{
   const el=event.target.closest('button');if(!el)return;
-  if(el.hasAttribute('data-project')) {selected=el.dataset.project;section='projects';tab='overview';render();}
+  if(el.hasAttribute('data-project')) {selected=el.dataset.project;section='projects';tab='overview';window.dispatchEvent(new CustomEvent('runner-section',{detail:'projects'}));render();}
   if(el.hasAttribute('data-back')) {selected=null;render();}
   if(el.hasAttribute('data-project-tab')) {tab=el.dataset.projectTab;render();}
   if(el.hasAttribute('data-edit-assignment'))editAssignment(data.assignments.find(a=>a.id===el.dataset.editAssignment));
