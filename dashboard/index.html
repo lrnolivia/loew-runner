@@ -23,7 +23,7 @@
       <div>
         <div class="eyebrow">LOEW.FI / RUNNER</div>
         <h1>runner</h1>
-        <p class="lede">headless by default · open for intervention</p>
+        <p class="lede">what’s happening · what needs you</p>
       </div>
       <div class="header-status">
         <span id="connection" class="status-pill status-neutral">
@@ -35,26 +35,26 @@
 
     <div class="app-toolbar terra-toolbar" data-figma-component="App / Toolbar">
       <nav class="primary-nav" aria-label="Runner">
-        <button class="primary-nav-item active" data-section="workers" type="button">workers</button>
+        <button class="primary-nav-item active" data-section="workers" type="button">status</button>
         <button class="primary-nav-item" data-section="visual" type="button">review</button>
       </nav>
       <div class="toolbar-actions">
-        <span id="toolbar-context" class="toolbar-meta">CONFIG · RECOVERY · DIAGNOSTICS</span>
+        <span id="toolbar-context" class="toolbar-meta">WHAT’S RUNNING · WHAT NEEDS YOU</span>
         <button id="refresh" class="tp-button secondary compact" type="button">Refresh</button>
       </div>
     </div>
 
     <div id="workers-section" class="app-grid app-section">
       <aside class="sidebar" aria-label="Workers">
-        <div class="section-kicker">WORKERS</div>
+        <div class="section-kicker">CURRENT AUTOMATION</div>
         <div id="worker-nav" class="worker-nav"></div>
-        <div class="sidebar-note">Target repositories remain read-only unless a guarded workflow explicitly says otherwise.</div>
+        <div class="sidebar-note">Runner watches your projects safely. Anything that can change code still goes through the normal guarded branch and review flow.</div>
       </aside>
 
       <section class="workspace">
         <nav class="tabs" aria-label="Runner view">
-          <button class="app-tab active" data-view="overview" type="button">Intervention</button>
-          <button class="app-tab" data-view="diagnostics" type="button">Diagnostics</button>
+          <button class="app-tab active" data-view="overview" type="button">At a glance</button>
+          <button class="app-tab" data-view="diagnostics" type="button">Technical details</button>
         </nav>
 
         <section class="summary" id="summary" aria-label="Runner summary"></section>
