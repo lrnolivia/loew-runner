@@ -650,6 +650,15 @@ select:focus-visible {
 
   .page-heading h1 { font-size: 30px; }
 
+  .review-heading {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .review-heading > strong {
+    align-self: flex-start;
+  }
+
   .section-heading { align-items: start; flex-direction: column; gap: 3px; }
 
   .attention-card {
