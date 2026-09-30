@@ -43,6 +43,7 @@
     "field/canonical-docked-wrappers",
     "field/chrome-global-utilities",
     "field/ci-lockfile-repair",
+    "field/consolidation-validation-baseline-20260930",
     "field/control",
     "field/dashboard-collection-semantics",
     "field/dashboard-editor-left-rail-handoff",
@@ -186,6 +187,26 @@
       "created_at": "2026-09-30T05:06:12.798659Z",
       "updated_at": "2026-09-30T05:06:12.798659Z",
       "lease_until": "2026-09-30T17:06:12.798659Z"
+    },
+    {
+      "id": "field-coordination-bootstrap",
+      "owner": "codex-coordination-setup-20260930",
+      "branch": "field/coordination-bootstrap",
+      "paths": [
+        "AGENTS.md",
+        ".github/workflows/runner-coordination.yml"
+      ],
+      "resources": [
+        "field-work-admission"
+      ],
+      "goal": "Install Field bootstrap, PR admission and managed cleanup",
+      "acceptance": "Live PR ownership gate passes; scheduled automation uses repository tokens and preserves legacy work",
+      "next_action": "Land Runner contract, then verify and land Field setup",
+      "base_sha": "0ea02501704e61d5133477d69fe677ad53295a56",
+      "state": "active",
+      "created_at": "2026-09-30T05:18:36.941151Z",
+      "updated_at": "2026-09-30T05:18:36.941151Z",
+      "lease_until": "2026-09-30T17:18:36.941151Z"
     }
   ]
 }

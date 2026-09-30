@@ -131,6 +131,8 @@
     "legacy_inventory": "docs/field/reorganization/2026-09-30-inventory.json",
     "audit_workflow": "coordination.yml",
     "cleanup": "merged-managed-branches-only",
-    "status": "enabled-on-merge"
+    "status": "enabled",
+    "admission_workflow": "lrnolivia/field:.github/workflows/runner-coordination.yml",
+    "cleanup_workflow": "lrnolivia/field:.github/workflows/runner-coordination.yml"
   }
 }
