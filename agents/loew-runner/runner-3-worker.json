@@ -1,0 +1,14 @@
+{
+  "id": "runner-3-worker",
+  "name": "Runner 3.0 worker",
+  "role": "worker",
+  "project": "loew-runner",
+  "mission": "Build the human control plane and reconcile Runner baseline; preserve infrastructure ownership",
+  "domain": "human-control-plane",
+  "status": "active",
+  "runtime": "codex",
+  "can_wake": false,
+  "current_assignment": "runner-3-human-control-plane",
+  "current_branch": "runner/3-e-runtime-closeout",
+  "authority": "User appointed this existing first-class Codex thread on 2026-09-29; no new agent created"
+}

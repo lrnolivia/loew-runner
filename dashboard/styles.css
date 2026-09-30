@@ -1135,3 +1135,7 @@ button:disabled { opacity:.6; cursor:wait!important; }
 .control-form-error {color:#ffb294;overflow-wrap:anywhere;}
 .control-json {padding:16px;background:var(--color-surface);font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;max-height:420px;overflow:auto;}
 .control-packet-panel {margin-top:20px;}
+
+[hidden] { display:none!important; }
+.primary-nav-item {color:var(--color-text-secondary);}
+@media(max-width:760px) { .control-tabs button,.primary-nav-item,#control-section button {min-height:44px;} }

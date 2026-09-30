@@ -3,9 +3,10 @@ import { mutate } from "./control-write.mjs";
 import { controlView, transport, readRecords, inventory, registry, validId } from './control-github.mjs';
 import { deriveProject, handoff } from './control-plane.mjs';
 const response=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
-export async function controlApi(request, token) {
+export async function controlApi(request, token, {allowWrites=true}={}) {
   const url=new URL(request.url), gh=transport(token);
   if (request.method==='POST' && url.pathname==='/api/control/actions') {
+    if(!allowWrites)return response({error:'Preview control writes are disabled. Use the authenticated production dashboard.'},403);
     if(!token)return response({error:'GitHub write token required'},503);
     if(request.headers.get('Origin')!==url.origin)return response({error:'Same-origin dashboard request required'},403);
     if(!request.headers.get('Content-Type')?.startsWith('application/json'))return response({error:'JSON request required'},415);
@@ -15,13 +16,14 @@ export async function controlApi(request, token) {
   }
   if(request.method!=='GET')return response({error:'Unsupported request'},405);
   if(url.pathname==='/api/control') {
-    const data=await controlView(gh,{includeInventory:false});
+    const records=await registry(gh);
     const snapshots=await readRecords(gh,'control-data/snapshots','control');
-    data.projects=data.projects.map(p=>{
-      const s=snapshots.find(s=>s.id===p.id);
-      return s ? deriveProject(p,data.assignments,data.agents,{...s.inventory,stale:true}) : p;
+    const projects=records.projects.map(p=>{
+      const saved=snapshots.find(s=>s.id===p.id);
+      const state=saved?{...saved.inventory,stale:true}:{complete:false,error:'Repository refresh not requested',branches:[],prs:[]};
+      return deriveProject(p,records.assignments,records.agents,state);
     });
-    data.attention=data.projects.flatMap(p=>p.attention);data.assignments=data.projects.flatMap(p=>p.assignments);
+    const data={projects,agents:records.agents,assignments:projects.flatMap(p=>p.assignments),attention:projects.flatMap(p=>p.attention),refreshed_at:new Date().toISOString(),zero_ai:true};
     return response(data);
   }
   const match=url.pathname.match(/^\/api\/control\/projects\/([a-z0-9._-]+)\/(refresh|handoff|notes)$/);

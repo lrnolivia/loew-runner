@@ -436,7 +436,7 @@ function setConnection(kind, label) {
 
 function renderNav(workers) {
   if (!workers.length) {
-    workerNavEl.innerHTML = '<div class="sidebar-note">No workers registered.</div>';
+    workerNavEl.innerHTML = '<div class="sidebar-note">No automations registered.</div>';
     return;
   }
   if (!selectedWorkerId || !workers.some((worker) => worker.id === selectedWorkerId)) {
@@ -472,7 +472,7 @@ function renderSummary(workers) {
 function renderWorkers(workers) {
   const visible = workers.filter((worker) => worker.id === selectedWorkerId);
   if (!visible.length) {
-    workersEl.innerHTML = '<div class="empty-state"><div class="state-title">No worker selected</div><div class="state-copy">Choose a worker from the navigation rail.</div></div>';
+    workersEl.innerHTML = '<div class="empty-state"><div class="state-title">No automation selected</div><div class="state-copy">Choose an automation from the navigation rail.</div></div>';
     return;
   }
 
@@ -685,4 +685,6 @@ tabs.forEach((tab) => {
   });
 });
 
+window.addEventListener('runner-control-state', event=>setConnection(event.detail.ok?'good':'bad',event.detail.ok?'CONNECTED':'CONTROL ERROR'));
+window.addEventListener('runner-section', event=>setSection(event.detail));
 setSection("home");

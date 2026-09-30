@@ -1,6 +1,6 @@
 import { notesInventory, digest } from "./control-notes.mjs";
 import { validId, encodePath, readFile, readRecords, registry, inventory } from './control-github.mjs';
-import { STATES, statusOf, ACTIVE, cleanupProof, deriveProject } from './control-plane.mjs';
+import { STATES, statusOf, ACTIVE, cleanupProof, deriveProject, handoff, matches } from './control-plane.mjs';
 const ROOT='lrnolivia/loew-runner';
 const fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
 export function cleanRecord(value) {return Object.fromEntries(Object.entries(value).filter(([key])=>!key.startsWith('_') && !['changed_files','inventory','attention','health','overlap'].includes(key)));}
@@ -36,7 +36,8 @@ export async function atomicControlWrite(gh, head, files, event) {
 export async function mutate(gh, body, actor='dashboard user') {
   const control=await gh(`/repos/${ROOT}/git/ref/heads/control`), head=control.object.sha;
   // Control overlays pinned to the captured head; stale writes cannot overwrite newer ones.
-  const records=await registry(gh,{controlRef:head});
+  const main=await gh(`/repos/${ROOT}/git/ref/heads/main`);
+  const records=await registry(gh,{controlRef:head,mainRef:main.object.sha});
   const project=records.projects.find(p=>p.id===body.project);if(!project)fail('Unknown project',404);
   const event={type:body.action,project:project.id,actor};
   if(body.action==='assignment') {
@@ -58,10 +59,69 @@ export async function mutate(gh, body, actor='dashboard user') {
     const next={...body.agent,project:project.id,status:'active',can_wake:false,registered_at:new Date().toISOString()};
     return atomicControlWrite(gh,head,[{path:`control-data/agents/${next.id}.json`,value:next}],{...event,agent:next.id});
   }
+  if(body.action==='retire-agent') {
+    const agent=records.agents.find(a=>a.id===body.agent && a.project===project.id);
+    if(!agent || agent._sha!==body.expected_revision || body.confirm!==true)fail('Agent changed or retirement not confirmed',409);
+    if(records.assignments.some(a=>a.project===project.id && a.owner_agent===agent.id && ACTIVE.has(statusOf(a.status))))fail('Reassign or archive active work before retiring this agent',409);
+    return atomicControlWrite(gh,head,[{path:`control-data/agents/${agent.id}.json`,value:{...cleanRecord(agent),status:'retired',retired_at:new Date().toISOString()}}],event);
+  }
+  if(body.action==='approve-overlap') {
+    const a=records.assignments.find(a=>a.id===body.a && a.project===project.id),b=records.assignments.find(a=>a.id===body.b && a.project===project.id);
+    if(!a || !b || a.id===b.id || body.confirm!==true || a._sha!==body.a_revision || b._sha!==body.b_revision)fail('Assignments changed or approval not confirmed',409);
+    if(!Array.isArray(body.paths) || !body.paths.length || body.paths.some(p=>typeof p!=='string' || p.includes('*') || [a,b].some(x=>(x.protected_paths || []).some(q=>matches(p,q)))))fail('Approval must name exact unprotected files');
+    const inv=await inventory(gh,project);if(!inv.complete)fail('Fresh file evidence required',409);
+    const files=x=>inv.prs.find(p=>p.number===x.pr || p.head===x.branch)?.changed_files || inv.branches.find(p=>p.name===x.branch)?.changed_files || [];
+    if(body.paths.some(p=>!files(a).includes(p) || !files(b).includes(p)))fail('Approval paths are not current collisions in both assignments',409);
+    const updates=[a,b].map(x=>({path:`control-data/assignments/${x.id}.json`,value:{...cleanRecord(x),overlap_approvals:[...(x.overlap_approvals || []).filter(v=>v.assignment!==(x.id===a.id?b.id:a.id)),{assignment:x.id===a.id?b.id:a.id,paths:body.paths,approved_by:actor,at:new Date().toISOString()}]}}));
+    return atomicControlWrite(gh,head,updates,{...event,assignments:[a.id,b.id],paths:body.paths});
+  }
+  if(['create-branch','create-pr','close-pr','run-qa','human-qa'].includes(body.action)) {
+    const a=records.assignments.find(a=>a.id===body.assignment && a.project===project.id);
+    if(!a || a._sha!==body.expected_revision)fail('Assignment changed; refresh before acting',409);
+    const target=`/repos/${project.repository}`, inv=await inventory(gh,project);if(!inv.complete)fail('Fresh complete repository evidence required',409);
+    const branch=inv.branches.find(b=>b.name===a.branch),pr=inv.prs.find(p=>p.number===a.pr || p.head===a.branch);
+    if(body.action==='human-qa') {
+      const actual=pr?.sha || branch?.sha;
+      if(!actual || actual!==body.expected_sha || !['PASS','FAIL_PRODUCT'].includes(body.verdict) || typeof body.criterion!=='string' || !body.criterion.trim() || typeof body.evidence!=='string' || !body.evidence.trim())fail('Human QA requires the current exact SHA, criterion and evidence');
+      return atomicControlWrite(gh,head,[{path:`control-data/qa/${a.id}.json`,value:{id:a.id,project:project.id,head_sha:actual,classification:body.verdict,source:'human',criterion:body.criterion,evidence:body.evidence,actor,at:new Date().toISOString()}}],{...event,assignment:a.id,head_sha:actual});
+    }
+    if(body.action==='run-qa') {
+      if(!branch || branch.sha!==body.expected_sha || !project.qa?.workflow)fail('Configure a deterministic QA workflow and refresh the exact assignment head',409);
+      const intent=await atomicControlWrite(gh,head,[],{...event,type:'qa-request-intent',assignment:a.id,head_sha:branch.sha});
+      await gh(`${target}/actions/workflows/${encodeURIComponent(project.qa.workflow)}/dispatches`,{method:'POST',body:JSON.stringify({ref:branch.name,inputs:{artifact_sha:branch.sha}})});
+      await atomicControlWrite(gh,intent.control_sha,[],{...event,type:'qa-requested',assignment:a.id,head_sha:branch.sha,workflow:project.qa.workflow});
+      return {ok:true,requested:true,head_sha:branch.sha,workflow:project.qa.workflow};
+    }
+    if(body.confirm!==true)fail('Review and confirm this repository action');
+    if(body.action==='create-branch') {
+      if(project.frozen || !a.owner_agent)fail('Unfreeze project and assign a registered owner before new repo work',409);
+      const name=String(body.branch || '');
+      if(!/^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,200}$/.test(name) || /\.\.|\/\/|\.lock(?:\/|$)|[./]$/.test(name))fail('Invalid branch name');
+      const prefixes=project.implementation?.branch_prefixes || [];if(!prefixes.length || !prefixes.some(p=>name.startsWith(p)) || (project.implementation?.excluded_branches || []).includes(name))fail('Branch must match configured project implementation prefixes');
+      if(inv.branches.some(b=>b.name===name) || a.branch)fail('Branch/assignment already linked; refresh and link existing work',409);
+      const intent=await atomicControlWrite(gh,head,[],{...event,type:'branch-create-intent',assignment:a.id,branch:name,base_sha:inv.main_sha});
+      await gh(`${target}/git/refs`,{method:'POST',body:JSON.stringify({ref:`refs/heads/${name}`,sha:inv.main_sha})});
+      return atomicControlWrite(gh,intent.control_sha,[{path:`control-data/assignments/${a.id}.json`,value:{...cleanRecord(a),branch:name,base_sha:inv.main_sha}}],{...event,assignment:a.id,branch:name});
+    }
+    if(body.action==='create-pr') {
+      if(!branch || branch.ahead<1 || pr)fail('A linked branch with unique work and no existing PR is required',409);
+      const intent=await atomicControlWrite(gh,head,[],{...event,type:'pr-create-intent',assignment:a.id,branch:branch.name});
+      const created=await gh(`${target}/pulls`,{method:'POST',body:JSON.stringify({title:String(a.goal || a.id).slice(0,240),head:branch.name,base:project.default_branch,draft:true,body:handoff(project,{...a,head_sha:branch.sha})})});
+      return atomicControlWrite(gh,intent.control_sha,[{path:`control-data/assignments/${a.id}.json`,value:{...cleanRecord(a),pr:created.number}}],{...event,assignment:a.id,pr:created.number});
+    }
+    if(body.action==='close-pr') {
+      if(statusOf(a.status)!=='SUPERSEDED' || !pr || !branch || branch.ahead!==0 || pr.sha!==body.expected_sha || (project.cleanup?.protected_branches || []).includes(branch.name) || /mobile|focus/i.test(branch.name))fail('Only explicitly superseded, unprotected PRs with no unique work may be closed',409);
+      const intent=await atomicControlWrite(gh,head,[],{...event,type:'pr-close-intent',pr:pr.number,head_sha:pr.sha});
+      await gh(`${target}/pulls/${pr.number}`,{method:'PATCH',body:JSON.stringify({state:'closed'})});
+      const actual=await gh(`${target}/pulls/${pr.number}`);if(actual.state!=='closed')fail('PR close outcome unverified; inspect before retrying',409);
+      await atomicControlWrite(gh,intent.control_sha,[],{...event,type:'pr-closed',pr:pr.number,head_sha:pr.sha});
+      return {ok:true,pr:pr.number,state:'closed'};
+    }
+  }
   if(body.action==='freeze') {
     if(project._sha!==body.expected_revision)fail('Project changed; refresh before saving',409);
     if(typeof body.frozen!=='boolean')fail('Invalid freeze value');
-    return atomicControlWrite(gh,head,[{path:`control-data/projects/${project.id}.json`,value:{...cleanRecord(project),frozen:body.frozen}}],event);
+    return atomicControlWrite(gh,head,[{path:`control-data/projects/${project.id}.json`,value:{id:project.id,frozen:body.frozen}}],event);
   }
   if(body.action==='refresh') {
     const state=await inventory(gh,project);
@@ -98,7 +158,7 @@ export async function mutate(gh, body, actor='dashboard user') {
     const target=`/repos/${project.repository}`;
     const [current,main,prs]=await Promise.all([gh(`${target}/git/ref/heads/${encodePath(branch.name)}`),gh(`${target}/commits/${encodeURIComponent(project.default_branch)}`),gh(`${target}/pulls?state=open&head=${encodeURIComponent(project.repository.split('/')[0]+':'+branch.name)}&per_page=100`)]);
     if(current.object.sha!==branch.sha || main.sha!==inv.main_sha || prs.length)fail('Repo moved after review; no deletion performed',409);
-    let outcome='deleted';try {await gh(`${target}/git/refs/heads/${encodePath(branch.name)}`,{method:'DELETE'});} catch(e) {outcome=`uncertain: ${e.message}`;}
+    let outcome='deleted';try {await gh(`${target}/git/refs/heads/${encodePath(branch.name)}`,{method:'DELETE'});try {await gh(`${target}/git/ref/heads/${encodePath(branch.name)}`);outcome='uncertain: branch remains after deletion';}catch(e){if(e.status!==404)throw e;}} catch(e) {outcome=`uncertain: ${e.message}`;}
     const after=await gh(`/repos/${ROOT}/git/ref/heads/control`);
     const result=await atomicControlWrite(gh,after.object.sha,[],{...event,branch:branch.name,outcome,intent:intent.event_id});
     if(outcome!=='deleted')return {...result,uncertain:true,error:outcome};

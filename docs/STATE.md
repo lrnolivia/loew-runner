@@ -46,3 +46,19 @@ Temporary local build checkpoints are separate from this remote baseline. `runne
 ## 3.0-A branch checkpoint (not main/deployed)
 
 `runner/3-a-control-plane` implements read-only project control surfaces and explicit repository refresh. Current missing Team records remain empty, not synthesized from historic reports. No guarded mutation is enabled. Both adapters route `/api/control`; hosted Access/token gates remain intact. Local syntax and seven test files pass; runtime/hosted evidence still pending. Control overlays use `control-data/` on `control`, leaving old scheduler state untouched.
+
+## Assembled 3.0 preview and remaining release gates
+
+Review stack: baseline #15 → read surfaces #16 → guarded controls #17 → consolidation #18 → infrastructure consumer #19 → runtime closeout. None is production truth until merged/deployed and verified.
+
+Implemented on branches: Projects/Home/Team/Assignments, ownership/reporting and overlap tables, repo inventory/cleanup proof, assignment editing/reassignment/dependencies, existing-agent registration, project freeze, atomic control/events, saved refresh, structured digest/tracker reconciliation, duplicate-reference archive and handoffs with clipboard fallback. Core makes no inference call. The appointed existing Runner 3.0 worker is explicitly registered; other historical chats are not fabricated as live Team members.
+
+Local syntax and eight deterministic test files pass. Local Chromium is absent; `runner-3-qa.yml` provides isolated exact-head desktop/mobile Chromium fixture QA on GitHub. That proves UI behavior against fixtures, not live GitHub writes, Access or provider-feed availability. Production gates remain:
+
+- exact-head browser workflow and hosted Worker build;
+- inspect screenshots and complete one bounded correction pass if needed;
+- authenticated isolated preview integration for a reversible control-record edit, freeze and status consolidation;
+- infrastructure owner supplies/acknowledges provider records or the UI remains explicitly unknown;
+- final main/PR/SHA refresh before promotion and branch retirement.
+
+The closeout branch additionally implements guarded branch/draft-PR creation, zero-unique-work superseded PR close, exact-head configured QA dispatch, evidence-bound human verdicts, reciprocal exact-file overlap approvals and agent retirement. These external action paths still require hosted integration evidence. Ownership/dependencies currently use structured tables rather than a graphical editor. Arbitrary Inspector recipes are not exposed; projects must configure their deterministic workflow. Safe deletion currently only handles zero-ahead branches and revalidates open PRs; it intentionally preserves any remaining unique commits. Notes archive is an archive-reference index preserving originals, not automatic prose-file relocation. Release remains 3.0 preview and package 0.6.0 until these acceptance gaps close or scope is explicitly narrowed. No release-complete claim is authorized by these tests.

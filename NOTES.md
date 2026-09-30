@@ -23,3 +23,11 @@ Dashboard consolidation persists a structured digest, reconciliation inventories
 ## 3.0-D UI integration checkpoint
 
 Infrastructure now displays expiring authoritative provider measurements and deferred work when supplied, otherwise unknown. No provider-limit/scheduling implementation changed. Published a narrow consumer-record contract in architecture for the infrastructure owner; actual feed availability remains unverified. Existing automation controls remain below the capacity surface.
+
+## 3.0-E validation checkpoint
+
+Added complete syntax-file coverage, same-origin/token JSON guards, stale-write and atomic-event tests, conservative glob/coverage warnings, protected Mobile proof and main-movement checks. Added isolated GitHub Chromium fixture workflow for desktop/mobile UI flows and screenshots. Local browser launch is blocked by a missing Chromium executable; no speculative product workaround. Normal GitHub write plugin still returns 403; existing Composio GitHub connection publishes review branches. Current spec gaps and live integration gates are recorded in STATE rather than claimed complete.
+
+## Closeout coverage additions
+
+Added guarded branch/draft-PR management, proof-gated superseded PR close, exact-head configured QA requests, human evidence records, reciprocal file approval and agent retirement. Project freeze now persists a minimal overlay so later main policy updates remain visible. Fixed initial snapshot derivation to use raw QA records once rather than incorrectly relabeling normalized NOT_RUN as stale. External integration and browser workflow remain release gates.
