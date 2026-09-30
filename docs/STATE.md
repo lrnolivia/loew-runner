@@ -49,7 +49,7 @@ Temporary local build checkpoints are separate from this remote baseline. `runne
 - README's mixed 0.1 pilot instructions, planned deployment and dependency snapshots are superseded as the entry point; exact original preserved at `docs/archive/README-0.6-baseline.md`.
 - This file owns current verified state and the cleanup ledger. README routes; architecture owns durable structure; 3.0 spec owns approved intent.
 - Existing `reports/` are provenance, not canonical implementation state or Team registration. They remain intact until structured supersession/reference proof exists.
-- Universal Bible/current authority and Night Shift contracts remain authoritative and unchanged.
+- Universal Bible/current authority and Night Shift contracts remain authoritative; this branch updates the Bible transport/control naming section and bumps its version.
 - No speculative first-class worker identities have been created.
 
 ## Next gates
