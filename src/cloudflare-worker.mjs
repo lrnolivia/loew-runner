@@ -27,6 +27,11 @@ function accessGuard(request, env) {
   }, 403);
 }
 
+function humanQaGuard(request) {
+  if (request.headers.get("Cf-Access-Jwt-Assertion")) return null;
+  return json({ error: "Human QA is available only through the Access-protected Runner." }, 403);
+}
+
 function tokenGuard(env) {
   if (env.RUNNER_GITHUB_TOKEN) return null;
   return json({
@@ -265,6 +270,8 @@ async function handleApi(request, env) {
 
   const qaMatch = url.pathname.match(/^\/api\/visual\/(vis_[a-zA-Z0-9-]{8,128})\/qa$/);
   if (qaMatch && (request.method === "GET" || request.method === "POST")) {
+    const qaAccessError = humanQaGuard(request);
+    if (qaAccessError) return qaAccessError;
     const evidence = await getVisualEvidence(env.EVIDENCE, qaMatch[1]);
     if (!evidence) return json({ error: "Evidence not found." }, 404);
     const questions = qaQuestionsForEvidence(evidence);
@@ -278,6 +285,8 @@ async function handleApi(request, env) {
 
   const liveMatch = url.pathname.match(/^\/api\/visual\/(vis_[a-zA-Z0-9-]{8,128})\/live$/);
   if (request.method === "GET" && liveMatch) {
+    const qaAccessError = humanQaGuard(request);
+    if (qaAccessError) return qaAccessError;
     const evidence = await getVisualEvidence(env.EVIDENCE, liveMatch[1]);
     if (!evidence) return json({ error: "Evidence not found." }, 404);
     const live = await inspectLivePreview(evidence, url.origin);
