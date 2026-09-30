@@ -1,5 +1,6 @@
 import { applyWorkerSettings, publicWorkerSettings } from "./settings.mjs";
 import { listVisualEvidence, getVisualEvidence, getVisualImage, compareVisualEvidence, listVisualRuns, reviewVisualRun } from "./visual-evidence.mjs";
+import { getQaReview, saveQaReview, qaQuestionsForEvidence, inspectLivePreview } from "./human-qa.mjs";
 const GITHUB_API = "https://api.github.com";
 const OWNER = "lrnolivia";
 const REPOSITORY = "loew-runner";
@@ -260,6 +261,27 @@ async function handleApi(request, env) {
       url.searchParams.get("current")
     );
     return comparison ? json(comparison) : json({ error: "Evidence comparison target not found." }, 404);
+  }
+
+  const qaMatch = url.pathname.match(/^\/api\/visual\/(vis_[a-zA-Z0-9-]{8,128})\/qa$/);
+  if (qaMatch && (request.method === "GET" || request.method === "POST")) {
+    const evidence = await getVisualEvidence(env.EVIDENCE, qaMatch[1]);
+    if (!evidence) return json({ error: "Evidence not found." }, 404);
+    const questions = qaQuestionsForEvidence(evidence);
+    if (request.method === "GET") {
+      const review = await getQaReview(env.EVIDENCE, qaMatch[1]);
+      return json({ ok: true, evidence, questions, review });
+    }
+    const review = await saveQaReview(env.EVIDENCE, qaMatch[1], await readBody(request), evidence);
+    return json({ ok: true, evidence_id: qaMatch[1], questions, review });
+  }
+
+  const liveMatch = url.pathname.match(/^\/api\/visual\/(vis_[a-zA-Z0-9-]{8,128})\/live$/);
+  if (request.method === "GET" && liveMatch) {
+    const evidence = await getVisualEvidence(env.EVIDENCE, liveMatch[1]);
+    if (!evidence) return json({ error: "Evidence not found." }, 404);
+    const live = await inspectLivePreview(evidence, url.origin);
+    return json({ ok: true, evidence_id: liveMatch[1], live });
   }
 
   const visualMatch = url.pathname.match(/^\/api\/visual\/(vis_[a-zA-Z0-9-]+)(?:\/(image))?$/);
