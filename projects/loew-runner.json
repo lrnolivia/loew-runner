@@ -4,7 +4,7 @@
   "repository": "lrnolivia/loew-runner",
   "managed": true,
   "default_branch": "main",
-  "stage": "3.0-A",
+  "stage": "3.0 preview / validation",
   "milestone": "human control plane",
   "cleanup": {
     "protected_branches": [
@@ -12,5 +12,21 @@
       "shared-repair-reconciler",
       "status/field-runner-authority-20260929"
     ]
+  },
+  "implementation": {
+    "branch_prefixes": [
+      "runner/"
+    ],
+    "excluded_branches": [
+      "main",
+      "control",
+      "shared-repair-reconciler"
+    ]
+  },
+  "qa": {
+    "routine_engine": "deterministic-github-chromium",
+    "runtime_required_for_web_visible_changes": true,
+    "exact_sha_gate": true,
+    "workflow": "runner-3-qa.yml"
   }
 }

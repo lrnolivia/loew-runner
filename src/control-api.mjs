@@ -15,13 +15,14 @@ export async function controlApi(request, token) {
   }
   if(request.method!=='GET')return response({error:'Unsupported request'},405);
   if(url.pathname==='/api/control') {
-    const data=await controlView(gh,{includeInventory:false});
+    const records=await registry(gh);
     const snapshots=await readRecords(gh,'control-data/snapshots','control');
-    data.projects=data.projects.map(p=>{
-      const s=snapshots.find(s=>s.id===p.id);
-      return s ? deriveProject(p,data.assignments,data.agents,{...s.inventory,stale:true}) : p;
+    const projects=records.projects.map(p=>{
+      const saved=snapshots.find(s=>s.id===p.id);
+      const state=saved?{...saved.inventory,stale:true}:{complete:false,error:'Repository refresh not requested',branches:[],prs:[]};
+      return deriveProject(p,records.assignments,records.agents,state);
     });
-    data.attention=data.projects.flatMap(p=>p.attention);data.assignments=data.projects.flatMap(p=>p.assignments);
+    const data={projects,agents:records.agents,assignments:projects.flatMap(p=>p.assignments),attention:projects.flatMap(p=>p.attention),refreshed_at:new Date().toISOString(),zero_ai:true};
     return response(data);
   }
   const match=url.pathname.match(/^\/api\/control\/projects\/([a-z0-9._-]+)\/(refresh|handoff|notes)$/);

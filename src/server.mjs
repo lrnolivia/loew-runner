@@ -117,6 +117,6 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, process.env.HOST || "127.0.0.1", () => {
   console.log(`loew-runner dashboard: http://localhost:${PORT}`);
 });

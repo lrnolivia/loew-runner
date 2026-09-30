@@ -1,0 +1,38 @@
+name: runner 3 control-plane QA
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      artifact_sha:
+        description: Exact repository commit to test
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: runner-3-qa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  deterministic-and-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || inputs.artifact_sha || github.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - run: npm run check && npm test
+      - name: Install isolated browser harness
+        run: npm install --no-save --package-lock=false playwright@1.62.1
+      - run: npx playwright install --with-deps chromium
+      - name: Exact-head fixture runtime QA
+        env:
+          QA_SHA: ${{ github.event.pull_request.head.sha || inputs.artifact_sha || github.sha }}
+        run: node scripts/control-browser-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runner-3-qa-${{ github.event.pull_request.head.sha || inputs.artifact_sha || github.sha }}
+          path: qa-artifacts/
