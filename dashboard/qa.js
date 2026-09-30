@@ -175,29 +175,34 @@ async function saveReview() {
     clearTimeout(saveTimer);
     saveTimer = null;
   }
-  const message = stage && stage.querySelector(".qa-save-state");
+
+  const evidenceId = state.evidence.evidence_id;
+  const review = {
+    answers: { ...(state.review.answers || {}) },
+    notes: state.review.notes || "",
+    overall: state.review.overall || null
+  };
+  const activeStage = stage;
+  const message = activeStage && activeStage.querySelector(".qa-save-state");
   if (message) message.textContent = "Saving…";
+
   try {
     const payload = await api(
-      "/api/visual/" + encodeURIComponent(state.evidence.evidence_id) + "/qa",
+      "/api/visual/" + encodeURIComponent(evidenceId) + "/qa",
       {
         method: "POST",
-        body: JSON.stringify({
-          answers: state.review.answers || {},
-          notes: state.review.notes || "",
-          overall: state.review.overall || null
-        })
+        body: JSON.stringify(review)
       }
     );
-    state.review = payload.review;
-    if (message) {
+    if (state?.evidence?.evidence_id === evidenceId) state.review = payload.review;
+    if (message?.isConnected) {
       message.textContent = "Saved " + new Date(payload.review.updated_at).toLocaleTimeString([], {
         hour: "numeric",
         minute: "2-digit"
       });
     }
   } catch (error) {
-    if (message) message.textContent = "Could not save · " + error.message;
+    if (message?.isConnected) message.textContent = "Could not save · " + error.message;
   }
 }
 
