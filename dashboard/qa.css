@@ -88,7 +88,7 @@ body.qa-open { overflow: hidden; }
 }
 .qa-view-toggle,
 .qa-live-link {
-  min-height: 34px;
+  min-height: 44px;
   padding: 7px 10px;
   border: 0;
   border-radius: 7px;
@@ -161,8 +161,8 @@ body.qa-open { overflow: hidden; }
 }
 .qa-panel-tools { display: flex; gap: 4px; }
 .qa-icon-button {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 8px;
   background: transparent;
@@ -232,7 +232,7 @@ body.qa-open { overflow: hidden; }
   gap: 8px;
 }
 .qa-text-button {
-  min-height: 36px;
+  min-height: 44px;
   padding: 6px 0;
   border: 0;
   background: transparent;
@@ -277,7 +277,7 @@ body.qa-open { overflow: hidden; }
   margin-top: 7px;
 }
 .qa-overall-button {
-  min-height: 40px;
+  min-height: 44px;
   padding: 7px;
   border: 1px solid var(--color-border);
   border-radius: 9px;
@@ -302,7 +302,7 @@ body.qa-open { overflow: hidden; }
 }
 .qa-save-state { color: var(--color-neutral); font-size: 10px; }
 .qa-save-button {
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 14px;
   border: 0;
   border-radius: 9px;
@@ -319,7 +319,7 @@ body.qa-open { overflow: hidden; }
   border-top: 1px solid var(--color-border);
 }
 .qa-details summary {
-  min-height: 36px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   color: var(--color-neutral);
@@ -377,7 +377,7 @@ body.qa-open { overflow: hidden; }
   .qa-answer-grid,
   .qa-overall-options { grid-template-columns: 1fr; }
   .qa-answer,
-  .qa-overall-button { min-height: 42px; }
+  .qa-overall-button { min-height: 44px; }
   .qa-mini,
   .qa-stage.qa-left .qa-mini { left: auto; right: 8px; bottom: 8px; }
   .qa-live-link {
