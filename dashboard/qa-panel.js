@@ -77,6 +77,7 @@ export function renderQaPanel(stage, state, questionIndex, handlers) {
   if (q) {
     const answer = review.answers && review.answers[q.id];
     questionHtml =
+      '<section class="qa-question-card">' +
       '<div class="qa-progress">Question ' + (questionIndex + 1) + " of " + questions.length + " · " + answered + " answered</div>" +
       '<h2 class="qa-question">' + qaEscape(q.prompt) + "</h2>" +
       '<p class="qa-question-reason">' + qaEscape(q.reason || "") + "</p>" +
@@ -89,12 +90,13 @@ export function renderQaPanel(stage, state, questionIndex, handlers) {
       '<div class="qa-question-nav">' +
       '<button type="button" class="qa-text-button" data-qa-prev ' + (questionIndex === 0 ? "disabled" : "") + ">← Previous</button>" +
       '<button type="button" class="qa-text-button" data-qa-next ' + (questionIndex >= questions.length - 1 ? "disabled" : "") + ">Next →</button>" +
-      "</div>";
+      "</div></section>";
   } else {
     questionHtml =
+      '<section class="qa-question-card">' +
       '<div class="qa-progress">Human QA</div>' +
       '<h2 class="qa-question">No targeted questions for this capture.</h2>' +
-      '<p class="qa-question-reason">You can still leave notes and give the screen an overall verdict.</p>';
+      '<p class="qa-question-reason">You can still leave notes and give the screen an overall verdict.</p></section>';
   }
 
   panel.innerHTML =
