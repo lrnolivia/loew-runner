@@ -114,6 +114,14 @@ Provide deterministic create/read/update/resolve operations for:
 
 These should store records in Runner's existing ownership/state architecture or a scoped extension agreed with its owner. UI and chat must use the same operations. Approval never itself overrides mandatory checks.
 
+### Composio dependency exit criterion
+
+Composio is a temporary fallback/bootstrap and recovery transport, not a required normal-operation dependency in the intended Relay workflow. Working credentials alone do not supply missing MCP tools. Recent fallback use covered coordination record transactions, PR ready/merge, and Cloudflare Worker rename/source upload.
+
+Batch 1 must map every routine fallback to a bounded native Relay operation backed by the same deterministic engine. Prove a complete normal project workflow with Composio disabled: resolve → claim/preflight → source change/PR → checks/review → authorized exact-head merge → deployment → runtime evidence → completion. Do not copy Composio's unrestricted execution surface. Worker identity/admin migration can remain a documented exceptional recovery capability rather than expanding routine writes.
+
+Keep Composio available as optional out-of-band recovery while migration is verified, but do not make the user install/connect it for ordinary Relay work. A host connector permission prompt is separate from backend tool coverage and cannot be promised away. Report precisely which operations still depend on external fallback.
+
 ### Batch 1 acceptance
 
 Capability matrix accounts for every operation above; deferred provider/platform constraints have explicit reasons. Tools enforce identical policy from chat and UI. Meaningful tests cover overlapping claims, CAS conflict, expired-owner reservation, changed-head rejection, denied scope, duplicate submission, timeout after successful write, stale evidence/approval, absent evidence, provider outage and retry exhaustion. Mutation receipts are durable and re-readable after chat/widget restart. Representative end-to-end authorized workflows pass on exact artifacts. Existing SOURCE/CLOUD/Builds and protected Runner reads remain healthy. No new repetitive user prompts for already-authorized routine work.
