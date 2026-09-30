@@ -78,16 +78,16 @@ export function stateLabel(state) {
 function taskRow(item) {
   const title = item.goal || item.id || "Work item";
   const next = item.next_action || "";
+  const technical = next || item.branch || item.pr;
   return `
     <article class="task-row">
       <div class="task-state task-state-${esc(item.state || "unknown")}">${esc(stateLabel(item.state))}</div>
       <div class="task-copy">
         <strong>${esc(title)}</strong>
-        ${next ? `<p>${esc(next)}</p>` : ""}
-        ${item.branch || item.pr ? `
+        ${technical ? `
           <details class="task-details">
             <summary>Technical details</summary>
-            <div>${item.branch ? "Branch · " + esc(item.branch) : ""}${item.pr ? (item.branch ? "<br>" : "") + "PR #" + esc(item.pr) : ""}</div>
+            <div>${next ? esc(next) : ""}${item.branch ? (next ? "<br><br>" : "") + "Branch · " + esc(item.branch) : ""}${item.pr ? ((next || item.branch) ? "<br>" : "") + "PR #" + esc(item.pr) : ""}</div>
           </details>
         ` : ""}
       </div>
