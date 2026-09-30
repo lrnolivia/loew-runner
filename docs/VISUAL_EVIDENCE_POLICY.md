@@ -62,6 +62,30 @@ Default per-object safety limits are **15 MiB for still images** and **100 MiB /
 
 Visuals storage is bounded. Runner must maintain a configured storage budget rather than assuming the backing object store is unlimited.
 
+### Post-merge archive and purge
+
+Runner Visuals is working evidence storage, not permanent high-resolution media storage.
+
+Once Runner verifies that the exact evidenced branch/PR head has been integrated into the project's default branch, the corresponding full-resolution visual blobs become eligible for archival and purge. Merge verification must use the recorded exact head and merged/default-branch identity; merely opening or approving a PR is not enough.
+
+Before deleting a merged evidence blob, Runner must create and verify a compact archive bundle in the configured visual archive repository. The archive is intended for provenance and later inspection, not lossless replay of every captured byte.
+
+A default archive bundle contains:
+
+- the durable evidence/run metadata and exact artifact/merge identities
+- a compact manifest with hashes, original MIME types, sizes, capture times, project/PR/run/step context, and original Visuals evidence IDs
+- compressed review stills or thumbnails for image evidence
+- for video, a poster frame plus a small set of representative keyframes/contact sheet; include a compact video transcode only when the evidence is marked failure/changed/human-QA or explicitly pinned for motion review
+- pointers to associated logs/assertions/Runner records when available
+
+Archive bundles must remain deliberately small. Prefer WebP/AVIF/JPEG review derivatives and compressed JSON/text. Do not commit raw full-resolution screenshots or ordinary full-length source videos to Git merely to preserve them.
+
+After the archive commit is durably recorded and its manifest/hash read back successfully, Runner may delete the bulky working blob and mark the Visuals receipt `archived` with the archive repository/path/commit. The evidence metadata remains queryable from Runner.
+
+If archive creation fails, purge must not proceed. Archive retry is background work owned by Runner; the original producer does not wait for it.
+
+The designated archive repository must be explicitly configured. Until it exists, eligible merged evidence may expire from normal retention only according to the configured storage budget; Runner must not invent or silently choose an archive repository.
+
 Storage management follows these rules:
 
 1. **Content-addressed deduplication.** Hash stored bytes and reuse an existing object when identical media is registered again. Multiple evidence records may point to one blob.
@@ -69,14 +93,15 @@ Storage management follows these rules:
 3. **Soft and hard watermarks.** Begin cleanup at **80%** of Runner's configured Visuals storage budget. Treat **90%** as the hard watermark that triggers immediate eligible cleanup before accepting additional non-critical media.
 4. **Prefer cheap retention.** Keep thumbnails/review derivatives smaller than source media. Do not keep duplicate transcodes without a review or compatibility reason.
 5. **Never evict active evidence.** Do not purge an in-progress upload, current comparison baseline, explicit pin, unresolved failure/danger-zone packet, or media referenced by an active human-QA request.
-6. **Oldest low-value evidence goes first.** When cleanup is needed, purge expired unpinned PASS video first, then expired unpinned PASS stills, then superseded baselines. Failure/changed/human-QA evidence receives the longer retention window.
+6. **Merged-and-archived evidence goes first.** Prefer purging full-resolution blobs whose exact evidenced work is merged to the default branch and whose compact archive bundle is verified. After that, purge expired unpinned PASS video, then expired unpinned PASS stills, then superseded baselines. Failure/changed/human-QA evidence receives the longer retention window.
 7. **Pins are explicit.** A pin prevents automatic blob eviction but does not exempt the record from storage accounting. Long-lived pins should be reviewed when the budget is under pressure.
 8. **Cleanup is observable.** Purging a blob updates its Visuals record to `expired` or `purged`; it does not delete the evidence receipt.
 
 Default retention windows:
 
-- ordinary unpinned PASS screenshot/image: **30 days**
-- ordinary unpinned PASS video: **14 days**
+- merged + successfully archived ordinary PASS media: purge full-resolution working blob as soon as practical after archive verification
+- ordinary unmerged/unarchived PASS screenshot/image: **30 days**
+- ordinary unmerged/unarchived PASS video: **14 days**
 - changed/failing/danger-zone/human-QA media: **90 days**
 - current baseline or explicit pin: retain until superseded/unpinned, subject to emergency storage review
 - metadata receipt: retain at least **180 days after blob expiry/purge**
