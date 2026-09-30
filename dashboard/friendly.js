@@ -2,6 +2,12 @@
 const friendlyRoot = document.querySelector("#workers-section");
 const friendlyToolbar = document.querySelector("#toolbar-context");
 
+function friendlyEscape(value) {
+  return String(value == null ? "" : value).replace(/[&<>"\']/g, function (char) {
+    return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "\'": "&#039;" })[char];
+  });
+}
+
 function friendlyText(text) {
   return String(text || "")
     .replace(/lockfile repair/gi, "dependency repair")
@@ -105,8 +111,8 @@ function simplifyWorkers() {
         const summary = document.createElement("div");
         summary.className = "friendly-status overview-only";
         summary.innerHTML =
-          '<section><div class="friendly-label">What happened</div><div class="friendly-copy">' + friendlyText(latest) + "</div></section>" +
-          '<section><div class="friendly-label">What happens next</div><div class="friendly-copy">' + friendlyText(next) + "</div></section>" +
+          '<section><div class="friendly-label">What happened</div><div class="friendly-copy">' + friendlyEscape(friendlyText(latest)) + "</div></section>" +
+          '<section><div class="friendly-label">What happens next</div><div class="friendly-copy">' + friendlyEscape(friendlyText(next)) + "</div></section>" +
           '<section><div class="friendly-label">What Runner can do</div><div class="friendly-copy">Runner can watch, verify, and prepare guarded project work. Anything that changes code still goes through a branch and review.</div></section>';
         dataHeader.before(summary);
       }
