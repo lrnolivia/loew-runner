@@ -102,7 +102,14 @@ function renderAttention(ui) {
 
   target.innerHTML = attention.slice(0, 3).map(worker => {
     const state = worker.runtime || {};
-    const text = state.next_focus || state.last_summary || "Runner found something that needs attention.";
+    const text =
+      state.dependency_health === "repairable"
+        ? "Runner found a setup problem it knows how to repair."
+        : state.dependency_health === "failed"
+          ? "Runner needs to re-check this project’s setup."
+          : state.status === "waiting_credentials"
+            ? "Runner needs access before it can keep going."
+            : "The automatic check stopped and needs another look.";
     return `
       <article class="attention-card">
         <div><span>${esc(projectName(worker.id))}</span><strong>${esc(text)}</strong></div>
