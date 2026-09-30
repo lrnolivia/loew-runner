@@ -105,6 +105,12 @@ export async function loadReview(ui) {
     const seen = new Set();
 
     for (const item of raw) {
+      const context = item.context || {};
+      const internalRunnerAudit =
+        context.project === "loew-runner" &&
+        (String(item.request_id || "").startsWith("runner-ui-audit") ||
+          String(context.surface || "").toLowerCase().includes("audit"));
+      if (internalRunnerAudit) continue;
       const key = evidenceKey(item);
       if (seen.has(key)) continue;
       seen.add(key);
