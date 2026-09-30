@@ -35,3 +35,7 @@ test('stale assignment revision prevents all writes',async()=>{
   };
   await assert.rejects(()=>mutate(gh,{action:'assignment',project:'p',id:'a',expected_revision:'stale',patch:{status:'ACTIVE'}}),/changed/);
 });
+test('preview controls cannot mutate shared production state',async()=>{
+  const r=await controlApi(new Request('https://preview.test/api/control/actions',{method:'POST',headers:{Origin:'https://preview.test','Content-Type':'application/json'},body:'{}'}),'token',{allowWrites:false});
+  assert.equal(r.status,403);assert.match((await r.json()).error,/Preview/);
+});

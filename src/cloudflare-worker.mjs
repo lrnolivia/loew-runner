@@ -226,7 +226,7 @@ async function handleApi(request, env) {
   const tokenError = tokenGuard(env);
   if (tokenError) return tokenError;
 
-  if (url.pathname.startsWith("/api/control")) return controlApi(request, env.RUNNER_GITHUB_TOKEN);
+  if (url.pathname.startsWith("/api/control")) return controlApi(request, env.RUNNER_GITHUB_TOKEN, { allowWrites: env.CONTROL_WRITES === "true" && url.hostname === (env.CONTROL_HOSTNAME || "runner.loew.fi") && !!request.headers.get("Cf-Access-Jwt-Assertion") });
 
   if (request.method === "GET" && url.pathname === "/api/workers") {
     return json(await workersView(env));

@@ -3,9 +3,10 @@ import { mutate } from "./control-write.mjs";
 import { controlView, transport, readRecords, inventory, registry, validId } from './control-github.mjs';
 import { deriveProject, handoff } from './control-plane.mjs';
 const response=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
-export async function controlApi(request, token) {
+export async function controlApi(request, token, {allowWrites=true}={}) {
   const url=new URL(request.url), gh=transport(token);
   if (request.method==='POST' && url.pathname==='/api/control/actions') {
+    if(!allowWrites)return response({error:'Preview control writes are disabled. Use the authenticated production dashboard.'},403);
     if(!token)return response({error:'GitHub write token required'},503);
     if(request.headers.get('Origin')!==url.origin)return response({error:'Same-origin dashboard request required'},403);
     if(!request.headers.get('Content-Type')?.startsWith('application/json'))return response({error:'JSON request required'},415);

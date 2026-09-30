@@ -10,11 +10,14 @@
     ]
   },
   "vars": {
-    "REQUIRE_ACCESS": "true"
+    "REQUIRE_ACCESS": "true",
+    "CONTROL_WRITES": "true",
+    "CONTROL_HOSTNAME": "runner.loew.fi"
   },
   "previews": {
     "vars": {
-      "REQUIRE_ACCESS": "false"
+      "REQUIRE_ACCESS": "false",
+      "CONTROL_WRITES": "false"
     }
   },
   "secrets": {
